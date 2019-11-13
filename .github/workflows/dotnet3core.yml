@@ -13,5 +13,7 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 3.0.100
+    - name: Init Submodules
+      run: git submodule init --recoursive
     - name: Build with dotnet
       run: dotnet build "./src/x1d/X1 Wallet.sln" --configuration Release
