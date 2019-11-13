@@ -1,0 +1,36 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`component.UI.Spinner should render correctly 1`] = `
+.c0 {
+  box-sizing: border-box;
+  color: lightningOrange;
+}
+
+.c1 {
+  -webkit-animation: iVXCSc 1s linear infinite;
+  animation: iVXCSc 1s linear infinite;
+}
+
+<div
+  className="c0"
+  color="lightningOrange"
+>
+  <svg
+    className="c1"
+    height="1em"
+    viewBox="0 0 14 14"
+    width="1em"
+  >
+    <defs>
+      <path
+        d="M0 7a.778.778 0 1 1 1.556 0c0 1.464.58 2.835 1.594 3.85a5.444 5.444 0 1 0 1.766-8.881A.778.778 0 1 1 4.32.53 7 7 0 1 1 0 7z"
+        id="spinner_svg__a"
+      />
+    </defs>
+    <use
+      fill="currentColor"
+      xlinkHref="#spinner_svg__a"
+    />
+  </svg>
+</div>
+`;

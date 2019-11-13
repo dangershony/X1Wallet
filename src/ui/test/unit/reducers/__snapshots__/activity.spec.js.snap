@@ -1,0 +1,119 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`reducers activityReducer should handle CHANGE_FILTER 1`] = `
+Object {
+  "activityLoadingError": null,
+  "filter": undefined,
+  "filters": Array [
+    Object {
+      "key": "ALL_ACTIVITY",
+    },
+    Object {
+      "key": "SENT_ACTIVITY",
+    },
+    Object {
+      "key": "RECEIVED_ACTIVITY",
+    },
+    Object {
+      "key": "PENDING_ACTIVITY",
+    },
+    Object {
+      "key": "EXPIRED_ACTIVITY",
+    },
+    Object {
+      "key": "INTERNAL_ACTIVITY",
+    },
+  ],
+  "isActivityLoading": false,
+  "modal": Object {
+    "itemId": null,
+    "itemType": null,
+  },
+  "searchText": null,
+}
+`;
+
+exports[`reducers activityReducer should handle FETCH_ACTIVITY_HISTORY 1`] = `
+Object {
+  "isActivityLoading": true,
+}
+`;
+
+exports[`reducers activityReducer should handle FETCH_ACTIVITY_HISTORY_FAILURE 1`] = `
+Object {
+  "activityLoadingError": undefined,
+  "isActivityLoading": false,
+}
+`;
+
+exports[`reducers activityReducer should handle FETCH_ACTIVITY_HISTORY_SUCCESS 1`] = `
+Object {
+  "isActivityLoading": false,
+}
+`;
+
+exports[`reducers activityReducer should handle HIDE_ACTIVITY_MODAL 1`] = `
+Object {
+  "activityLoadingError": null,
+  "filter": "ALL_ACTIVITY",
+  "filters": Array [
+    Object {
+      "key": "ALL_ACTIVITY",
+    },
+    Object {
+      "key": "SENT_ACTIVITY",
+    },
+    Object {
+      "key": "RECEIVED_ACTIVITY",
+    },
+    Object {
+      "key": "PENDING_ACTIVITY",
+    },
+    Object {
+      "key": "EXPIRED_ACTIVITY",
+    },
+    Object {
+      "key": "INTERNAL_ACTIVITY",
+    },
+  ],
+  "isActivityLoading": false,
+  "modal": Object {
+    "itemId": null,
+    "itemType": null,
+  },
+  "searchText": null,
+}
+`;
+
+exports[`reducers activityReducer should handle SHOW_ACTIVITY_MODAL 1`] = `
+Object {
+  "activityLoadingError": null,
+  "filter": "ALL_ACTIVITY",
+  "filters": Array [
+    Object {
+      "key": "ALL_ACTIVITY",
+    },
+    Object {
+      "key": "SENT_ACTIVITY",
+    },
+    Object {
+      "key": "RECEIVED_ACTIVITY",
+    },
+    Object {
+      "key": "PENDING_ACTIVITY",
+    },
+    Object {
+      "key": "EXPIRED_ACTIVITY",
+    },
+    Object {
+      "key": "INTERNAL_ACTIVITY",
+    },
+  ],
+  "isActivityLoading": false,
+  "modal": Object {
+    "itemId": undefined,
+    "itemType": undefined,
+  },
+  "searchText": null,
+}
+`;

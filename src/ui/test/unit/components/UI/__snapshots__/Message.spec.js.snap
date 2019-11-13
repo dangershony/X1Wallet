@@ -1,0 +1,22 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`component.UI.Message should render correctly with default props 1`] = `
+<Styled(Styled(styled.div))
+  fontSize="s"
+  fontWeight="normal"
+>
+  <Styled(styled.div)
+    alignItems="flex-start"
+  >
+    <styled.div
+      mr={1}
+      width="14px"
+    />
+    <Styled(styled.div)
+      lineHeight="normal"
+    >
+      A message
+    </Styled(styled.div)>
+  </Styled(styled.div)>
+</Styled(Styled(styled.div))>
+`;

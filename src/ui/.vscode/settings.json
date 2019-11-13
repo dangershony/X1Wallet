@@ -1,0 +1,15 @@
+{
+  "javascript.validate.enable": true,
+  "search.exclude": {
+    ".git": true,
+    ".eslintcache": true,
+    "bower_components": true,
+    "dist": true,
+    "dll": true,
+    "release": true,
+    "node_modules": true,
+    "npm-debug.log.*": true,
+    "test/**/__snapshots__": true,
+    "yarn.lock": true
+  }
+}

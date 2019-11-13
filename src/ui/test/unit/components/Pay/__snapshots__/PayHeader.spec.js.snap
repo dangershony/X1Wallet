@@ -1,0 +1,54 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`component.Pay.PayHeader generic should render correctly 1`] = `
+<Header
+  align="center"
+  logo={
+    <SvgSend
+      height="45px"
+      width="45px"
+    />
+  }
+  title="Send Bitcoin"
+/>
+`;
+
+exports[`component.Pay.PayHeader offchain should render correctly 1`] = `
+<Header
+  align="center"
+  logo={
+    <SvgLightning
+      height="45px"
+      width="45px"
+    />
+  }
+  subtitle={
+    <FormattedMessage
+      defaultMessage="Lightning Payment"
+      id="components.Pay.subtitle_offchain"
+      values={Object {}}
+    />
+  }
+  title="Send Bitcoin"
+/>
+`;
+
+exports[`component.Pay.PayHeader onchain should render correctly 1`] = `
+<Header
+  align="center"
+  logo={
+    <SvgOnchain
+      height="45px"
+      width="45px"
+    />
+  }
+  subtitle={
+    <FormattedMessage
+      defaultMessage="On-Chain Payment"
+      id="components.Pay.subtitle_onchain"
+      values={Object {}}
+    />
+  }
+  title="Send Bitcoin"
+/>
+`;

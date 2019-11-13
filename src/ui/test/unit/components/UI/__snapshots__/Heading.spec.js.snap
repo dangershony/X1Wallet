@@ -1,0 +1,21 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`component.UI.Heading should render correctly 1`] = `
+.c0 {
+  box-sizing: border-box;
+  margin: 0;
+  font-size: xl;
+  color: primaryText;
+  font-weight: light;
+  line-height: normal;
+}
+
+<h2
+  className="c0"
+  color="primaryText"
+  fontSize="xl"
+  fontWeight="light"
+>
+  Heading here
+</h2>
+`;

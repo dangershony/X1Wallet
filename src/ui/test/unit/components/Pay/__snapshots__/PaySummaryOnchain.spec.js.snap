@@ -1,0 +1,133 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`component.Form.PaySummaryOnchain should render correctly 1`] = `
+<styled.div
+  cryptoUnit="btc"
+  cryptoUnits={
+    Array [
+      Object {
+        "key": "btc",
+        "name": "BTC",
+      },
+      Object {
+        "key": "bits",
+        "name": "bits",
+      },
+      Object {
+        "key": "sats",
+        "name": "satoshis",
+      },
+    ]
+  }
+  currentTicker={
+    Object {
+      "EUR": 5656.01,
+      "GBP": 5052.73,
+      "USD": 6477.78,
+    }
+  }
+  fiatCurrency="USD"
+  queryFees={
+    [MockFunction] {
+      "calls": Array [
+        Array [
+          "mmxyr3LNKbnbrf6jdGXZpCE4EDpMSZRf4c",
+          1000,
+        ],
+      ],
+      "results": Array [
+        Object {
+          "type": "return",
+          "value": undefined,
+        },
+      ],
+    }
+  }
+  setCryptoCurrency={[MockFunction]}
+>
+  <styled.div
+    py={3}
+  >
+    <Styled(styled.div)
+      alignItems="center"
+    >
+      <styled.div
+        width={0.45454545454545453}
+      >
+        <CryptoValueSelector
+          fontSize="xxl"
+          value={1000}
+        />
+        <Text
+          color="gray"
+        >
+           ≈ 
+          <FiatValue
+            style="currency"
+            value={1000}
+          />
+        </Text>
+      </styled.div>
+      <styled.div
+        width={0.09090909090909091}
+      >
+        <Text
+          color="lightningOrange"
+          textAlign="center"
+        >
+          <SvgBigArrowRight
+            height="28px"
+            width="40px"
+          />
+        </Text>
+      </styled.div>
+      <styled.div
+        width={0.45454545454545453}
+      >
+        <Text
+          className="hint--bottom-left"
+          data-hint="mmxyr3LNKbnbrf6jdGXZpCE4EDpMSZRf4c"
+          textAlign="right"
+        >
+          <Truncate
+            text="mmxyr3LNKbnbrf6jdGXZpCE4EDpMSZRf4c"
+          />
+        </Text>
+      </styled.div>
+    </Styled(styled.div)>
+  </styled.div>
+  <Bar
+    variant="light"
+  />
+  <DataRow
+    left={
+      <ForwardRef(styled.div)>
+        <Text>
+          <FormattedMessage
+            defaultMessage="Fee"
+            id="components.Pay.fee"
+            values={Object {}}
+          />
+        </Text>
+        <Text
+          color="gray"
+          fontWeight="light"
+        >
+          <FormattedMessage
+            defaultMessage="Added to total"
+            id="components.Pay.fee_addition"
+            values={Object {}}
+          />
+        </Text>
+      </ForwardRef(styled.div)>
+    }
+    right={
+      <FormattedMessage
+        defaultMessage="unknown"
+        id="components.Pay.fee_unknown"
+        values={Object {}}
+      />
+    }
+  />
+</styled.div>
+`;

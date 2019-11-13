@@ -1,0 +1,138 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`component.UI.Toggle should render correctly 1`] = `
+.c4 {
+  box-sizing: border-box;
+}
+
+.c0 {
+  box-sizing: border-box;
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-align-items: center;
+  -webkit-box-align: center;
+  -ms-flex-align: center;
+  align-items: center;
+}
+
+.c2 {
+  box-sizing: border-box;
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-flex-direction: column;
+  -ms-flex-direction: column;
+  flex-direction: column;
+}
+
+.c3 {
+  padding: 16px;
+  color: #ffffff;
+  background-color: transparent;
+  border: 1px solid;
+  border-color: #959595;
+  border-radius: 5px;
+  font-family: Roboto,system-ui,sans-serif;
+  font-size: 13px;
+  font-weight: 300;
+  width: 100%;
+  opacity: inherit;
+  outline: none;
+  border-color: #959595;
+}
+
+.c3:not([readOnly]):not([disabled]):focus {
+  border-color: #fd9800;
+}
+
+.c3::-webkit-search-decoration:hover,
+.c3::-webkit-search-cancel-button:hover {
+  cursor: pointer;
+}
+
+.c5 {
+  margin-left: -24px;
+  width: 8px;
+  pointer-events: none;
+  color: #959595;
+}
+
+.c1 input {
+  cursor: pointer;
+  color: transparent;
+  text-shadow: 0 0 0 #ffffff;
+}
+
+<form
+  onKeyDown={[Function]}
+  onReset={[Function]}
+  onSubmit={[Function]}
+>
+  <div
+    aria-expanded={false}
+    aria-haspopup="listbox"
+    aria-labelledby="downshift-0-label"
+    aria-owns={null}
+    role="combobox"
+    style={
+      Object {
+        "position": "relative",
+      }
+    }
+  >
+    <div
+      className="c0"
+    >
+      <div
+        className="c1 c2"
+      >
+        <div
+          className="c0"
+        >
+          <input
+            aria-activedescendant={null}
+            aria-autocomplete="list"
+            aria-controls={null}
+            aria-labelledby="downshift-0-label"
+            autoComplete="off"
+            className="c3"
+            color="primaryText"
+            disabled={false}
+            fontFamily="sans"
+            fontSize="m"
+            fontWeight="light"
+            id="downshift-0-input"
+            onBlur={[Function]}
+            onChange={[Function]}
+            onFocus={[Function]}
+            onKeyDown={[Function]}
+            onMouseDown={[Function]}
+            placeholder="Please select"
+            readOnly={false}
+            value=""
+            width={1}
+          />
+        </div>
+      </div>
+      <div
+        className="c4"
+      >
+        <svg
+          className="c5"
+          height="1em"
+          viewBox="6.295 8.295 12 7.41"
+          width={8}
+        >
+          <path
+            d="M18.295 9.705l-1.41-1.41-4.59 4.58-4.59-4.58-1.41 1.41 6 6z"
+            fill="currentColor"
+          />
+        </svg>
+      </div>
+    </div>
+  </div>
+</form>
+`;

@@ -1,0 +1,370 @@
+{
+  "name": "x1_wallet",
+  "productName": "X1",
+  "version": "0.5.2-beta",
+  "description": "Wallet for ObsidianX And the Bitcoin Lightning Network (powered by Zap)",
+  "scripts": {
+    "build": "cross-env NODE_CONFIG_ENV=production webpack -r @babel/register --config webpack/webpack.config.prod.js",
+    "build-e2e": "cross-env NODE_CONFIG_ENV=production webpack -r @babel/register --config webpack/webpack.config.e2e.js",
+    "build-dll": "webpack -r @babel/register --config webpack/webpack.config.dll.js",
+    "build-main": "webpack -r @babel/register --config webpack/webpack.config.main.js",
+    "clean": "rimraf node_modules dll dist coverage .eslintcache",
+    "coverage": "open coverage/index.html",
+    "coveralls": "cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js",
+    "predev": "npm run build-main",
+    "dev": "cross-env HOT=1 npm run start-renderer-dev",
+    "extract-messages": "extract-messages -l=af-ZA,ca-ES,de-DE,es-ES,ga-IE,hr-HR,ja-JP,no-NO,pt-PT,sr-SP,uk-UA,zh-TW,ar-SA,cs-CZ,el-GR,fi-FI,he-IL,hu-HU,ko-KR,pl-PL,ro-RO,sv-SE,vi-VN,bg-BG,da-DK,en,fr-FR,hi-IN,it-IT,nl-NL,pt-BR,ru-RU,tr-TR,zh-CN -o translations -d en --flat true renderer/**/messages.js",
+    "fetch-lnd": "node -r @babel/register ./scripts/fetch-lnd-for-packaging.js",
+    "generate-icon": "node -r @babel/register ./scripts/genIcons.js",
+    "lint-base": "eslint --cache --format=node_modules/eslint-formatter-pretty",
+    "lint": "npm run lint-base -- .",
+    "lint-fix-base": "npm run lint-base -- --fix",
+    "lint-fix": "npm run lint-fix-base -- \"./**/*.{js,json,md}\"",
+    "lint-styles-base": "stylelint --custom-formatter=node_modules/stylelint-formatter-pretty --allow-empty-input",
+    "lint-styles": "npm run lint-styles-base -- \"renderer/components/**/*.js\"",
+    "lint-styles-fix-base": "npm run lint-styles-base -- --fix",
+    "lint-styles-fix": "npm run lint-styles-fix-base -- \"renderer/components/**/*.js\"",
+    "lint-check": "eslint --print-config .eslintrc.js | eslint-config-prettier-check",
+    "lint-ci": "npm run lint && npm run lint-styles",
+    "package": "npm run build && npm run fetch-lnd && build",
+    "release": "npm run package -- --publish onTagOrDraft",
+    "postinstall": "npm run build-dll",
+    "prestart": "cross-env NODE_CONFIG_ENV=production npm run build",
+    "start": "cross-env NODE_ENV=production electron .",
+    "start-main-dev": "electron -r @babel/register ./electron/main.js",
+    "start-renderer-dev": "webpack-dev-server -r @babel/register --config webpack/webpack.config.renderer.js  --progress",
+    "storybook": "cross-env NODE_ENV=storybook start-storybook -p 6006",
+    "storybook:build": "cross-env NODE_ENV=storybook build-storybook",
+    "storybook:deploy": "npm run storybook:build && gh-pages -t -d storybook-static -o origin -b gh-pages",
+    "test": "npm run lint && npm run lint-styles && npm run build && npm run test-unit && npm run test-e2e",
+    "test-unit": "jest --coverage ./test/unit",
+    "test-ci": "npm run test-e2e && npm run test-unit",
+    "pretest-e2e": "npm run build-e2e",
+    "test-e2e": "cross-env DISABLE_INIT=1 ELECTRON_USER_DIR_TEMP=1 testcafe --selector-timeout 60000 --assertion-timeout 60000 --screenshots ./screenshots --screenshots-on-fails electron:./ ./test/e2e"
+  },
+  "config": {
+    "lnd-binary": {
+      "binaryVersion": "0.7.1-beta-3-g26af2265",
+      "binarySite": "https://github.com/LN-Zap/lnd/releases/download"
+    }
+  },
+  "sideEffects": [
+    "./i18n/locale.js"
+  ],
+  "browserslist": [
+    "electron 5.0"
+  ],
+  "engines": {
+    "node": ">=8.11.2",
+    "npm": ">=5.3.0"
+  },
+  "devEngines": {
+    "node": ">=8.2.1",
+    "npm": ">=5.3.0",
+    "yarn": ">=0.21.3"
+  },
+  "build": {
+    "productName": "X1",
+    "appId": "org.obsidianproject.x1",
+    "generateUpdatesFilesForAllChannels": true,
+    "files": [
+      "dist/",
+      "!node_modules/"
+    ],
+    "directories": {
+      "buildResources": "resources",
+      "output": "release"
+    },
+    "extraResources": [
+      "resources/icon.png",
+      {
+        "from": "resources/bin/${os}/${arch}",
+        "to": "resources/bin",
+        "filter": [
+          "lnd*"
+        ]
+      },
+      {
+        "from": "node_modules/lnd-grpc/proto",
+        "to": "resources/proto"
+      }
+    ],
+    "protocols": [
+      {
+        "name": "Bitcoin",
+        "schemes": [
+          "bitcoin"
+        ]
+      },
+      {
+        "name": "Lightning",
+        "schemes": [
+          "lightning"
+        ]
+      },
+      {
+        "name": "Lnd Connect",
+        "schemes": [
+          "lndconnect"
+        ]
+      }
+    ],
+    "artifactName": "${productName}-${os}-${arch}-v${version}.${ext}",
+    "mac": {
+      "category": "public.app-category.finance",
+      "icon": "resources/icon.icns",
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "dmg": {
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    },
+    "win": {
+      "icon": "resources/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "linux": {
+      "category": "Finance",
+      "packageCategory": "wallet",
+      "icon": "resources/linux",
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "desktop": {
+        "Comment": "X1 - Wallet",
+        "Icon": "x1",
+        "Name": "X1",
+        "StartupNotify": "true",
+        "Terminal": "false",
+        "Type": "Application",
+        "Categories": "P2P;Finance;Security"
+      }
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/obsidianproject/X1"
+  },
+  "author": "Jack Mallers <jimmymowschess@gmail.com> (https://github.com/jackmallers)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/obsidianproject/X1/issues"
+  },
+  "homepage": "https://github.com/obsidianproject/X1#readme",
+  "jest": {
+    "collectCoverageFrom": [
+      "renderer/**/*.js",
+      "!dist/**",
+      "!dll/**",
+      "!coverage/**",
+      "!**/node_modules/**"
+    ],
+    "coverageReporters": [
+      "json",
+      "lcov",
+      "html"
+    ],
+    "moduleNameMapper": {
+      "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/test/unit/__mocks__/fileMock.js"
+    },
+    "moduleFileExtensions": [
+      "js",
+      "json"
+    ],
+    "moduleDirectories": [
+      "renderer",
+      "node_modules"
+    ],
+    "setupFilesAfterEnv": [
+      "<rootDir>/test/unit/__helpers__/setup.js"
+    ],
+    "transform": {
+      "^.+\\.js$": "babel-jest"
+    }
+  },
+  "devDependencies": {
+    "@babel/core": "7.4.5",
+    "@babel/plugin-proposal-class-properties": "7.4.4",
+    "@babel/plugin-proposal-export-default-from": "7.2.0",
+    "@babel/plugin-transform-react-constant-elements": "7.2.0",
+    "@babel/plugin-transform-react-inline-elements": "7.2.0",
+    "@babel/preset-env": "7.4.5",
+    "@babel/preset-react": "7.0.0",
+    "@babel/register": "7.4.4",
+    "@commitlint/cli": "8.0.0",
+    "@commitlint/config-conventional": "8.0.0",
+    "@storybook/addon-actions": "5.1.9",
+    "@storybook/addon-console": "1.1.0",
+    "@storybook/addon-knobs": "5.1.9",
+    "@storybook/addon-links": "5.1.9",
+    "@storybook/addon-storysource": "5.1.9",
+    "@storybook/addons": "5.1.9",
+    "@storybook/components": "5.1.9",
+    "@storybook/react": "5.1.9",
+    "@svgr/cli": "4.3.0",
+    "add-asset-html-webpack-plugin": "3.1.3",
+    "babel-core": "7.0.0-bridge.0",
+    "babel-eslint": "10.0.2",
+    "babel-jest": "24.8.0",
+    "babel-loader": "8.0.6",
+    "babel-plugin-module-resolver": "3.2.0",
+    "babel-plugin-react-intl": "3.3.3",
+    "babel-plugin-react-intl-auto": "1.7.0",
+    "babel-plugin-styled-components": "1.10.1",
+    "babel-plugin-transform-react-pure-class-to-function": "1.0.1",
+    "babel-plugin-transform-react-remove-prop-types": "0.4.24",
+    "browserslist": "4.6.3",
+    "circular-dependency-plugin": "5.0.2",
+    "clean-webpack-plugin": "3.0.0",
+    "copy-webpack-plugin": "5.0.3",
+    "coveralls": "3.0.4",
+    "cross-env": "5.2.0",
+    "cross-spawn": "6.0.5",
+    "csp-html-webpack-plugin": "3.0.2",
+    "electron": "5.0.6",
+    "electron-builder": "20.41.0",
+    "electron-devtools-installer": "2.2.4",
+    "electron-updater": "4.0.6",
+    "enzyme": "3.10.0",
+    "enzyme-adapter-react-16": "1.14.0",
+    "enzyme-to-json": "3.3.5",
+    "eslint": "5.16.0",
+    "eslint-config-airbnb": "17.1.0",
+    "eslint-config-prettier": "5.0.0",
+    "eslint-formatter-pretty": "2.1.1",
+    "eslint-import-resolver-babel-module": "5.1.0",
+    "eslint-import-resolver-webpack": "0.11.1",
+    "eslint-plugin-compat": "3.1.2",
+    "eslint-plugin-import": "2.17.3",
+    "eslint-plugin-jest": "22.6.4",
+    "eslint-plugin-jsdoc": "8.1.0",
+    "eslint-plugin-json": "1.4.0",
+    "eslint-plugin-jsx-a11y": "6.2.1",
+    "eslint-plugin-markdown": "1.0.0",
+    "eslint-plugin-prettier": "3.1.0",
+    "eslint-plugin-promise": "4.1.1",
+    "eslint-plugin-react": "7.13.0",
+    "eslint-plugin-react-hooks": "1.6.0",
+    "eslint-plugin-testcafe": "0.2.1",
+    "extract-react-intl-messages": "1.0.1",
+    "fake-indexeddb": "2.1.1",
+    "gh-pages": "2.0.1",
+    "html-webpack-plugin": "3.2.0",
+    "husky": "2.4.1",
+    "jest": "24.8.0",
+    "jest-styled-components": "6.3.3",
+    "lnd-binary": "0.3.11",
+    "minimist": "1.2.0",
+    "mock-spawn": "0.2.6",
+    "prettier": "1.18.2",
+    "ps-node": "0.1.6",
+    "react-storybook-addon-chapters": "3.1.3",
+    "react-test-renderer": "16.8.6",
+    "redux-logger": "3.0.6",
+    "rimraf": "2.6.3",
+    "storybook-addon-intl": "2.4.1",
+    "storybook-react-router": "1.0.5",
+    "storybook-styled-components": "1.1.4",
+    "stylelint": "10.1.0",
+    "stylelint-config-recommended": "2.2.0",
+    "stylelint-config-styled-components": "0.1.1",
+    "stylelint-formatter-pretty": "1.0.3",
+    "stylelint-processor-styled-components": "1.8.0",
+    "testcafe": "1.2.1",
+    "testcafe-browser-provider-electron": "0.0.10",
+    "testcafe-react-selectors": "3.1.0",
+    "url-loader": "2.0.0",
+    "webpack": "4.35.0",
+    "webpack-bundle-analyzer": "3.3.2",
+    "webpack-cli": "3.3.4",
+    "webpack-dev-server": "3.7.2",
+    "webpack-merge": "4.2.1"
+  },
+  "dependencies": {
+    "@hot-loader/react-dom": "16.8.6",
+    "@rebass/components": "4.0.0-1",
+    "axios": "0.19.0",
+    "bip21": "2.0.2",
+    "bip39-en": "1.1.1",
+    "bitcoinjs-lib": "5.0.5",
+    "bolt11": "1.2.5",
+    "coininfo": "5.1.0",
+    "comlinkjs": "3.2.0",
+    "config": "3.1.0",
+    "copy-to-clipboard": "3.2.0",
+    "country-data-lookup": "0.0.3",
+    "debug": "4.1.1",
+    "debug-logger": "0.4.1",
+    "dexie": "2.0.4",
+    "downshift": "3.2.10",
+    "dropbox": "4.0.27",
+    "electron-is-dev": "1.1.0",
+    "get-port": "5.0.0",
+    "googleapis": "40.0.0",
+    "history": "4.9.0",
+    "informed": "2.11.7",
+    "is-electron-renderer": "2.0.1",
+    "jstimezonedetect": "1.0.6",
+    "lnd-grpc": "0.3.0-beta.3",
+    "lndconnect": "0.2.7",
+    "lodash": "4.17.14",
+    "node-fetch": "2.6.0",
+    "polished": "3.4.1",
+    "prop-types": "15.7.2",
+    "qrcode.react": "0.9.3",
+    "react": "16.8.6",
+    "react-dom": "16.8.6",
+    "react-hot-loader": "4.9.0",
+    "react-intl": "2.9.0",
+    "react-intl-redux": "2.1.1",
+    "react-redux": "7.1.0",
+    "react-router-dom": "5.0.1",
+    "react-spring": "8.0.25",
+    "react-textfit": "1.1.0",
+    "react-virtualized": "9.21.1",
+    "rebass": "3.1.1",
+    "redux": "4.0.1",
+    "redux-electron-ipc": "https://github.com/LN-Zap/redux-electron-ipc#b513220d085ad3e96e459d7efcdfc37bf75417b6",
+    "redux-thunk": "2.3.0",
+    "reselect": "4.0.0",
+    "satoshi-bitcoin": "1.0.4",
+    "semver": "6.1.1",
+    "source-map-support": "0.5.12",
+    "split2": "3.1.1",
+    "styled-components": "4.3.2",
+    "styled-reset": "2.0.16",
+    "tildify": "2.0.0",
+    "untildify": "4.0.0",
+    "validator": "11.0.0",
+    "yup": "0.27.0"
+  },
+  "resolutions": {
+    "lodash": "4.17.14"
+  },
+  "main": "./dist/main.js"
+}

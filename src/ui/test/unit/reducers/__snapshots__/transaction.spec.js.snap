@@ -1,0 +1,71 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`reducers transactionReducer should correctly addTransaction 1`] = `
+Object {
+  "transactionLoading": false,
+  "transactions": Array [
+    undefined,
+  ],
+  "transactionsSending": Array [],
+}
+`;
+
+exports[`reducers transactionReducer should correctly getTransactions 1`] = `
+Object {
+  "transactionLoading": true,
+  "transactions": Array [],
+  "transactionsSending": Array [],
+}
+`;
+
+exports[`reducers transactionReducer should correctly receiveTransactions 1`] = `
+Object {
+  "transactionLoading": false,
+  "transactions": undefined,
+  "transactionsSending": Array [],
+}
+`;
+
+exports[`reducers transactionReducer should correctly sendTransaction 1`] = `
+Object {
+  "transactionLoading": false,
+  "transactions": Array [],
+  "transactionsSending": Array [
+    undefined,
+  ],
+}
+`;
+
+exports[`reducers transactionReducer should correctly sendTransactions 1`] = `
+Object {
+  "transactionLoading": false,
+  "transactions": Array [],
+  "transactionsSending": Array [
+    undefined,
+  ],
+}
+`;
+
+exports[`reducers transactionReducer should correctly transactionFailed 1`] = `
+Object {
+  "transactionLoading": false,
+  "transactions": Array [],
+  "transactionsSending": Array [],
+}
+`;
+
+exports[`reducers transactionReducer should correctly transactionSuccessful 1`] = `
+Object {
+  "transactionLoading": false,
+  "transactions": Array [],
+  "transactionsSending": Array [],
+}
+`;
+
+exports[`reducers transactionReducer should handle initial state 1`] = `
+Object {
+  "transactionLoading": false,
+  "transactions": Array [],
+  "transactionsSending": Array [],
+}
+`;

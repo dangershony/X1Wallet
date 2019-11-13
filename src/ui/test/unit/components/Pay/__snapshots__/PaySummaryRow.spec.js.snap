@@ -1,0 +1,24 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`component.Form.DataRow should render correctly 1`] = `
+<styled.div
+  py={3}
+>
+  <Styled(styled.div)
+    alignItems="center"
+    justifyContent="space-between"
+  >
+    <Text
+      fontWeight="normal"
+    >
+      left contnet
+    </Text>
+    <Styled(styled.div)
+      alignItems="flex-end"
+      flexDirection="column"
+    >
+      right content
+    </Styled(styled.div)>
+  </Styled(styled.div)>
+</styled.div>
+`;

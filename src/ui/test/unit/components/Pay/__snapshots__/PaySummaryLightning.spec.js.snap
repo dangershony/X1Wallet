@@ -1,0 +1,147 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`component.Form.PaySummaryLightning should render correctly 1`] = `
+<styled.div
+  cryptoUnit="btc"
+  cryptoUnits={
+    Array [
+      Object {
+        "key": "btc",
+        "name": "BTC",
+      },
+      Object {
+        "key": "bits",
+        "name": "bits",
+      },
+      Object {
+        "key": "sats",
+        "name": "satoshis",
+      },
+    ]
+  }
+  currentTicker={
+    Object {
+      "EUR": 5656.01,
+      "GBP": 5052.73,
+      "USD": 6477.78,
+    }
+  }
+  fiatCurrency="USD"
+  setCryptoCurrency={[MockFunction]}
+>
+  <styled.div
+    py={3}
+  >
+    <Styled(styled.div)
+      alignItems="center"
+    >
+      <styled.div
+        width={0.45454545454545453}
+      >
+        <Styled(styled.div)
+          alignItems="baseline"
+          flexWrap="wrap"
+        >
+          <styled.div>
+            <Text
+              fontSize="xxl"
+              textAlign="left"
+            >
+              <CryptoValue
+                value={10000}
+              />
+            </Text>
+          </styled.div>
+          <Connect(WithTheme(InjectIntl(Component)))
+            ml={2}
+          />
+        </Styled(styled.div)>
+        <Text
+          color="gray"
+        >
+          ≈ 
+          <FiatValue
+            style="currency"
+            value={10000}
+          />
+        </Text>
+      </styled.div>
+      <styled.div
+        width={0.09090909090909091}
+      >
+        <Text
+          color="lightningOrange"
+          textAlign="center"
+        >
+          <SvgBigArrowRight
+            height="28px"
+            width="40px"
+          />
+        </Text>
+      </styled.div>
+      <styled.div
+        width={0.45454545454545453}
+      >
+        <Text
+          className="hint--bottom-left"
+          data-hint="03c856d2dbec7454c48f311031f06bb99e3ca1ab15a9b9b35de14e139aa663b463"
+          textAlign="right"
+        >
+          <Truncate
+            maxlen={15}
+            text="03c856d2dbec7454c48f311031f06bb99e3ca1ab15a9b9b35de14e139aa663b463"
+          />
+        </Text>
+      </styled.div>
+    </Styled(styled.div)>
+  </styled.div>
+  <Bar
+    variant="light"
+  />
+  <DataRow
+    left={
+      <FormattedMessage
+        defaultMessage="Fee"
+        id="components.Pay.fee"
+        values={Object {}}
+      />
+    }
+    right={
+      <FormattedMessage
+        defaultMessage="unknown"
+        id="components.Pay.fee_unknown"
+        values={
+          Object {
+            "maxFee": null,
+            "minFee": null,
+          }
+        }
+      />
+    }
+  />
+  <Bar
+    variant="light"
+  />
+  <DataRow
+    left={
+      <FormattedMessage
+        defaultMessage="Total"
+        id="components.Pay.total"
+        values={Object {}}
+      />
+    }
+    right={
+      <React.Fragment>
+        <CryptoValue
+          value={10000}
+        />
+         
+        BTC
+      </React.Fragment>
+    }
+  />
+  <Bar
+    variant="light"
+  />
+</styled.div>
+`;

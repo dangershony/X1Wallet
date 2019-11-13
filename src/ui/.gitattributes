@@ -1,0 +1,7 @@
+* text eol=lf
+*.png binary
+*.ico binary
+*.icns binary
+*.macaroon binary
+resources/bin/* binary
+resources/bin/* -text

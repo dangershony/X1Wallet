@@ -1,0 +1,180 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`component.UI.Dialog should render correctly with custom content 1`] = `
+<Dialog
+  buttons={
+    <React.Fragment>
+      <ForwardRef
+        isActive={false}
+        isDisabled={false}
+        isProcessing={false}
+        justify="center"
+        size="medium"
+        variant="primary"
+      >
+        Primary
+      </ForwardRef>
+      <ForwardRef
+        isActive={false}
+        isDisabled={false}
+        isProcessing={false}
+        justify="center"
+        size="medium"
+        variant="secondary"
+      >
+        Secondary
+      </ForwardRef>
+    </React.Fragment>
+  }
+  header={
+    <ForwardRef(Styled(styled.div))
+      alignItems="center"
+      alignSelf="stretch"
+      flexDirection="column"
+      mb={3}
+    >
+      <SvgGlobe
+        color="white"
+        height={64}
+        width={64}
+      />
+      <Heading2>
+        Custom heading
+      </Heading2>
+    </ForwardRef(Styled(styled.div))>
+  }
+  onClose={[Function]}
+  width={550}
+>
+  <Styled(styled.div)
+    alignItems="center"
+    flexDirection="column"
+  >
+    <Text
+      fontSize="xl"
+    >
+      This is a custom body
+    </Text>
+  </Styled(styled.div)>
+</Dialog>
+`;
+
+exports[`component.UI.Dialog should render correctly with one button 1`] = `
+<Styled(styled.div)
+  bg="primaryColor"
+  borderRadius={5}
+  boxShadow="0 3px 4px 0 rgba(0, 0, 0, 0.5)"
+  width={550}
+>
+  <CloseButton
+    onClick={[Function]}
+    size="s"
+  />
+  <Styled(styled.div)
+    alignItems="center"
+    alignSelf="stretch"
+    flexDirection="column"
+    justifyContent="center"
+    pb={4}
+  >
+    <Styled(styled.div)
+      alignItems="center"
+      flexDirection="column"
+      justifyContent="flex-start"
+    >
+      <Heading2
+        mb={4}
+      >
+        Title
+      </Heading2>
+    </Styled(styled.div)>
+    <Styled(styled.div)
+      alignSelf="stretch"
+      flexDirection="row"
+      justifyContent="space-evenly"
+      mt={4}
+      pl={6}
+      pr={6}
+    >
+      <Button
+        isActive={false}
+        isDisabled={false}
+        isProcessing={false}
+        justify="center"
+        key="Ok"
+        onClick={[Function]}
+        size="medium"
+        variant="primary"
+      >
+        Ok
+      </Button>
+    </Styled(styled.div)>
+  </Styled(styled.div)>
+</Styled(styled.div)>
+`;
+
+exports[`component.UI.Dialog should render correctly with two buttons 1`] = `
+<Styled(styled.div)
+  bg="primaryColor"
+  borderRadius={5}
+  boxShadow="0 3px 4px 0 rgba(0, 0, 0, 0.5)"
+  width={550}
+>
+  <CloseButton
+    onClick={[Function]}
+    size="s"
+  />
+  <Styled(styled.div)
+    alignItems="center"
+    alignSelf="stretch"
+    flexDirection="column"
+    justifyContent="center"
+    pb={4}
+  >
+    <Styled(styled.div)
+      alignItems="center"
+      flexDirection="column"
+      justifyContent="flex-start"
+    >
+      <Heading2
+        mb={4}
+      >
+        Title
+      </Heading2>
+    </Styled(styled.div)>
+    <Styled(styled.div)
+      alignSelf="stretch"
+      flexDirection="row"
+      justifyContent="space-evenly"
+      mt={4}
+      pl={6}
+      pr={6}
+    >
+      <Button
+        isActive={false}
+        isDisabled={false}
+        isProcessing={false}
+        justify="center"
+        key="Delete"
+        onClick={[Function]}
+        size="medium"
+        variant="primary"
+      >
+        Delete
+      </Button>
+      <Button
+        isActive={false}
+        isDisabled={false}
+        isProcessing={false}
+        justify="center"
+        key="Cancel"
+        onClick={[Function]}
+        size="medium"
+        variant="normal"
+      >
+        Cancel
+      </Button>
+    </Styled(styled.div)>
+  </Styled(styled.div)>
+</Styled(styled.div)>
+`;

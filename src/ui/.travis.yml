@@ -1,0 +1,91 @@
+dist: trusty
+sudo: required
+
+env:
+  global:
+    - DEBUG=electron-builder
+
+os:
+  - linux
+  - osx
+
+language: node_js
+node_js: stable
+
+cache:
+  apt: true
+  yarn: true
+
+addons:
+  artifacts:
+    debug: true
+    paths:
+      - './screenshots'
+  apt:
+    packages:
+      - fluxbox
+
+before_install:
+  - stty cols 80
+  - |
+    if [ $TRAVIS_OS_NAME == "linux" ]; then
+      sudo apt-get install gcc-multilib g++-multilib
+    fi
+  - curl -sL https://raw.githubusercontent.com/travis-ci/artifacts/master/install | bash
+
+install:
+  - yarn
+
+before_script:
+  - |
+    if [ $TRAVIS_OS_NAME == "linux" ]; then
+      export DISPLAY=:99.0
+      sh -e /etc/init.d/xvfb start
+      sleep 3
+      fluxbox >/dev/null 2>&1 &
+    fi
+
+script:
+  - |
+    set -e
+    yarn lint-ci
+    yarn test-ci
+    yarn coveralls || travis_terminate 1
+    set +e
+
+after_failure:
+  - artifacts upload ./screenshots
+
+branches:
+  only:
+    - master
+    - next
+    - /^feat\//
+
+jobs:
+  include:
+    - stage: deploy
+      name: Deploy to Github
+      if: (NOT type IN (pull_request)) AND (branch IN (master,next))
+      script: skip
+      deploy:
+        skip_cleanup: true
+        provider: script
+        script: yarn release --linux
+        on:
+          repo: LN-Zap/zap-desktop
+          all_branches: true
+          condition: $TRAVIS_BRANCH =~ ^master|next$
+
+    - os: osx
+      name: Deploy to Github
+      if: (NOT type IN (pull_request)) AND (branch IN (master,next))
+      script: skip
+      deploy:
+        skip_cleanup: true
+        provider: script
+        script: yarn release --mac
+        on:
+          repo: LN-Zap/zap-desktop
+          all_branches: true
+          condition: $TRAVIS_BRANCH =~ ^master|next$

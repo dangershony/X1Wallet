@@ -1,0 +1,124 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`component.UI.Notification should render correctly 1`] = `
+.c1 {
+  box-sizing: border-box;
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: justify;
+  -webkit-justify-content: space-between;
+  -ms-flex-pack: justify;
+  justify-content: space-between;
+}
+
+.c2 {
+  box-sizing: border-box;
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-align-items: center;
+  -webkit-box-align: center;
+  -ms-flex-align: center;
+  align-items: center;
+}
+
+.c3 {
+  box-sizing: border-box;
+  font-size: xl;
+}
+
+.c4 {
+  box-sizing: border-box;
+  margin-left: 8px;
+  font-weight: normal;
+}
+
+.c5 {
+  box-sizing: border-box;
+  margin-top: 4px;
+  font-size: xs;
+}
+
+.c0 {
+  box-sizing: border-box;
+  padding-top: 16px;
+  padding-bottom: 16px;
+  padding-left: 16px;
+  padding-right: 16px;
+  border-radius: 5px;
+  border-radius: 5px;
+  box-shadow: 0 3px 4px 0 rgba(30,30,30,0.5);
+  cursor: pointer;
+}
+
+<div
+  className="c0"
+  onMouseEnter={[Function]}
+  onMouseLeave={[Function]}
+>
+  <div
+    className="c1"
+  >
+    <div
+      className="c2"
+    >
+      <div
+        className="c3"
+        fontSize="xl"
+      >
+        <svg
+          height="1em"
+          viewBox="0 0 17 17"
+          width="1em"
+        >
+          <defs>
+            <path
+              d="M8.333 16.667A8.333 8.333 0 1 1 8.333 0a8.333 8.333 0 0 1 0 16.667zM11.095 5.66l-4.41 4.41-1.513-1.51a.833.833 0 1 0-1.179 1.178l2.101 2.101a.833.833 0 0 0 1.179 0l5-5a.833.833 0 0 0-1.179-1.178z"
+              id="success_svg__a"
+            />
+          </defs>
+          <use
+            fill="currentColor"
+            fillRule="evenodd"
+            xlinkHref="#success_svg__a"
+          />
+        </svg>
+      </div>
+      <div
+        className="c4"
+        fontWeight="normal"
+      />
+    </div>
+    <div
+      className="c5"
+      fontSize="xs"
+    >
+      <svg
+        height="1em"
+        strokeWidth={4}
+        viewBox="0 0 22 20"
+        width="1em"
+      >
+        <defs>
+          <path
+            d="M10 10L0 20l10-10L0 0l10 10L20 0l-8.394 8.394L10 10l1.606 1.606L20 20 10 10z"
+            id="x_svg__a"
+          />
+        </defs>
+        <use
+          fill="none"
+          fillRule="evenodd"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          transform="translate(1)"
+          xlinkHref="#x_svg__a"
+        />
+      </svg>
+    </div>
+  </div>
+</div>
+`;

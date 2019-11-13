@@ -1,0 +1,4 @@
+[submodule "src/x1d/dependencies/fullnode"]
+	path = src/x1d/dependencies/fullnode
+	url = https://github.com/VisualCrypt/ObsidianX.git
+	branch = proof-of-stake-v4

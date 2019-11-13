@@ -1,0 +1,61 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`component.UI.LightningInvoiceInput should render correctly 1`] = `
+.c0 {
+  box-sizing: border-box;
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-flex-direction: column;
+  -ms-flex-direction: column;
+  flex-direction: column;
+}
+
+.c1 {
+  padding: 16px;
+  color: #ffffff;
+  background-color: transparent;
+  border: 1px solid;
+  border-color: #959595;
+  border-radius: 5px;
+  font-family: Roboto,system-ui,sans-serif;
+  font-size: 13px;
+  font-weight: 300;
+  width: 100%;
+  opacity: inherit;
+  outline: none;
+  border-color: #959595;
+}
+
+.c1:not([readOnly]):not([disabled]):focus {
+  border-color: #fd9800;
+}
+
+<form
+  onKeyDown={[Function]}
+  onReset={[Function]}
+  onSubmit={[Function]}
+>
+  <div
+    className="c0"
+  >
+    <textarea
+      className="c1"
+      color="primaryText"
+      fontFamily="sans"
+      fontSize="m"
+      fontWeight="light"
+      onBlur={[Function]}
+      onChange={[Function]}
+      onFocus={[Function]}
+      placeholder="Paste a Lightning Payment Request or bitcoin Address here"
+      required={false}
+      rows={5}
+      spellCheck="false"
+      value=""
+      width={1}
+    />
+  </div>
+</form>
+`;

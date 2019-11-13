@@ -1,0 +1,123 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`component.UI.Modal should render correctly 1`] = `
+.c3 {
+  box-sizing: border-box;
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: end;
+  -webkit-justify-content: flex-end;
+  -ms-flex-pack: end;
+  justify-content: flex-end;
+}
+
+.c4 {
+  box-sizing: border-box;
+  padding: 8px;
+  height: 40px;
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+.c5 {
+  box-sizing: border-box;
+  color: primaryText;
+  background-color: primaryColor;
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  min-width: 900px;
+  min-height: 425px;
+  box-shadow: 0 20px 70px rgba(0,0,0,0.55);
+}
+
+.c1 {
+  box-sizing: border-box;
+  padding-top: 16px;
+  padding-left: 16px;
+  padding-right: 16px;
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: end;
+  -webkit-justify-content: flex-end;
+  -ms-flex-pack: end;
+  justify-content: flex-end;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.c0 {
+  box-sizing: border-box;
+  color: primaryText;
+  background-color: primaryColor;
+  height: 100%;
+  width: 100%;
+}
+
+.c2 {
+  box-sizing: border-box;
+  color: primaryText;
+  pointer-events: auto;
+  display: inline-block;
+}
+
+<div
+  className="c0"
+  color="primaryText"
+>
+  <div
+    className="c1"
+  >
+    <div
+      className="c2"
+      color="primaryText"
+    >
+      <div
+        className="c3"
+      >
+        <div
+          className="c4"
+        >
+          <svg
+            height={20}
+            viewBox="0 0 22 20"
+            width={20}
+          >
+            <defs>
+              <path
+                d="M10 10L0 20l10-10L0 0l10 10L20 0l-8.394 8.394L10 10l1.606 1.606L20 20 10 10z"
+                id="x_svg__a"
+              />
+            </defs>
+            <use
+              fill="none"
+              fillRule="evenodd"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              transform="translate(1)"
+              xlinkHref="#x_svg__a"
+            />
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+  <article
+    className="c5"
+    color="primaryText"
+  />
+</div>
+`;

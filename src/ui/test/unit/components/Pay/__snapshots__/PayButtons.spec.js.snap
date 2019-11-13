@@ -1,0 +1,58 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`component.Form.PayButtons should render correctly with default props 1`] = `
+<Styled(styled.div)
+  alignItems="center"
+  justifyContent="space-between"
+>
+  <styled.div
+    width={0.2}
+  >
+    <Button
+      isActive={false}
+      isDisabled={false}
+      isProcessing={false}
+      justify="center"
+      onClick={[Function]}
+      px={0}
+      size="medium"
+      type="button"
+      variant="secondary"
+    >
+      <Styled(styled.div)>
+        <Styled(styled.div)>
+          <SvgArrowLeft />
+        </Styled(styled.div)>
+        <Styled(styled.div)
+          ml={1}
+        >
+          <FormattedMessage
+            defaultMessage="Back"
+            id="components.Pay.back"
+            values={Object {}}
+          />
+        </Styled(styled.div)>
+      </Styled(styled.div)>
+    </Button>
+  </styled.div>
+  <Button
+    isActive={false}
+    isDisabled={false}
+    isProcessing={false}
+    justify="center"
+    mx="auto"
+    size="medium"
+    type="submit"
+    variant="normal"
+  >
+    <FormattedMessage
+      defaultMessage="Next"
+      id="components.Pay.next"
+      values={Object {}}
+    />
+  </Button>
+  <styled.div
+    width={0.2}
+  />
+</Styled(styled.div)>
+`;

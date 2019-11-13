@@ -1,0 +1,117 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`component.Dropdown should render correctly 1`] = `
+.c2 {
+  box-sizing: border-box;
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-align-items: center;
+  -webkit-box-align: center;
+  -ms-flex-align: center;
+  align-items: center;
+}
+
+.c5 {
+  box-sizing: border-box;
+  color: gray;
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+}
+
+.c4 {
+  box-sizing: border-box;
+  margin-right: 4px;
+  font-size: m;
+  color: primaryText;
+  text-align: left;
+  line-height: normal;
+}
+
+.c0 {
+  box-sizing: border-box;
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-flex-wrap: none;
+  -ms-flex-wrap: none;
+  flex-wrap: none;
+  -webkit-flex-direction: column;
+  -ms-flex-direction: column;
+  flex-direction: column;
+}
+
+.c1 {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-size: m;
+  font-weight: normal;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  display: inline-block;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.c3 {
+  white-space: nowrap;
+}
+
+<div
+  style={
+    Object {
+      "display": "inline-block",
+    }
+  }
+>
+  <div
+    className="c0"
+    onClick={[MockFunction]}
+  >
+    <button
+      className="c1"
+      fontSize="m"
+      fontWeight="normal"
+      onClick={[Function]}
+      type="button"
+    >
+      <div
+        className="c2"
+      >
+        <div
+          className="c3 c4"
+          color="primaryText"
+          fontSize="m"
+        >
+          BTC
+           
+        </div>
+        <div
+          className="c5"
+          color="gray"
+        >
+          <svg
+            height="1em"
+            viewBox="6.295 8.295 12 7.41"
+            width="0.6em"
+          >
+            <path
+              d="M18.295 9.705l-1.41-1.41-4.59 4.58-4.59-4.58-1.41 1.41 6 6z"
+              fill="currentColor"
+            />
+          </svg>
+        </div>
+      </div>
+    </button>
+  </div>
+</div>
+`;

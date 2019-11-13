@@ -1,0 +1,56 @@
+builds:
+  - id: lnd
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+    binary: lnd
+    main: ./cmd/lnd
+    ldflags:
+      - -X github.com/lightningnetwork/lnd/build.Commit={{.Tag}}
+    flags:
+      - -tags=experimental autopilotrpc signrpc walletrpc chainrpc invoicesrpc routerrpc
+  - id: lncli
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+    binary: lncli
+    main: ./cmd/lncli
+    ldflags:
+      - -X github.com/lightningnetwork/lnd/build.Commit={{.Tag}}
+    flags:
+      - -tags=experimental autopilotrpc signrpc walletrpc chainrpc invoicesrpc routerrpc
+archives:
+  - name_template: '{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}{{ .Arm }}-v{{ .Version }}'
+    format: tar.gz
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - none*
+    wrap_in_directory: true
+checksum:
+  name_template: 'manifest-{{ .Version }}.txt'
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+signs:
+  - artifacts: checksum
+release:
+  github:
+    owner: LN-Zap
+    name: lnd
+  prerelease: true
+  name_template: '{{.ProjectName}} v{{.Version}}'
+before:
+  hooks:
+    - make clean
+    - go mod download

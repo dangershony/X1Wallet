@@ -1,0 +1,4 @@
+{
+  "extends": ["config:js-app"],
+  "baseBranches": ["next"]
+}

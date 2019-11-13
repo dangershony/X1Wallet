@@ -1,0 +1,86 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`component.UI.Header should render correctly with default props 1`] = `
+<Styled(styled.div)
+  alignItems="center"
+  as="header"
+  flexDirection="column"
+  justifyContent="center"
+/>
+`;
+
+exports[`component.UI.Header should render correctly with logo 1`] = `
+<Styled(styled.div)
+  alignItems="center"
+  as="header"
+  flexDirection="column"
+  justifyContent="center"
+>
+  <Text
+    fontSize="50px"
+    lineHeight="1"
+    textAlign="center"
+  >
+    logo here
+  </Text>
+</Styled(styled.div)>
+`;
+
+exports[`component.UI.Header should render correctly with subtitle 1`] = `
+<Styled(styled.div)
+  alignItems="center"
+  as="header"
+  flexDirection="column"
+  justifyContent="center"
+>
+  <Heading4
+    textAlign="center"
+  >
+    subtitle here
+  </Heading4>
+</Styled(styled.div)>
+`;
+
+exports[`component.UI.Header should render correctly with title 1`] = `
+<Styled(styled.div)
+  alignItems="center"
+  as="header"
+  flexDirection="column"
+  justifyContent="center"
+>
+  <Heading1
+    mb={1}
+    textAlign="center"
+  >
+    title here
+  </Heading1>
+</Styled(styled.div)>
+`;
+
+exports[`component.UI.Header should render correctly with title, subtitle, and logo 1`] = `
+<Styled(styled.div)
+  alignItems="center"
+  as="header"
+  flexDirection="column"
+  justifyContent="center"
+>
+  <Text
+    fontSize="50px"
+    lineHeight="1"
+    textAlign="center"
+  >
+    logo here
+  </Text>
+  <Heading1
+    mb={1}
+    textAlign="center"
+  >
+    title here
+  </Heading1>
+  <Heading4
+    textAlign="center"
+  >
+    logo here
+  </Heading4>
+</Styled(styled.div)>
+`;

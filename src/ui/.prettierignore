@@ -1,0 +1,15 @@
+# App source
+package.json
+package-lock.json
+.git
+.babelrc
+node_modules
+coverage
+
+# App packaged
+release
+dist
+dll
+
+# Storybook
+storybook-static
