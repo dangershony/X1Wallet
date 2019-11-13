@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\dependencies\cryptography\VisualCrypt.VisualCryptLight\VisualCrypt.VisualCryptLight.csproj" />
+    <ProjectReference Include="..\Obsidian.Features.X1Wallet\Obsidian.Features.X1Wallet.csproj" />
+  </ItemGroup>
+
+</Project>

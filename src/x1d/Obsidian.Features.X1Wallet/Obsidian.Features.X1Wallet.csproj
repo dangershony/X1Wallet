@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <AssemblyVersion>1.0.*</AssemblyVersion>
+    <Deterministic>false</Deterministic>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <PackageId>X1Wallet</PackageId>
+    <Authors>X1Wallet</Authors>
+    <Company>X1Wallet</Company>
+    <Product>X1Wallet</Product>
+    <AssemblyName>X1Wallet</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\dependencies\cryptography\VisualCrypt.VisualCryptLight\VisualCrypt.VisualCryptLight.csproj" />
+    <ProjectReference Include="..\dependencies\fullnode\src\NBitcoin\NBitcoin.csproj" />
+    <ProjectReference Include="..\dependencies\fullnode\src\Obsidian.Networks.ObsidianX\Obsidian.Networks.ObsidianX.csproj" />
+    <ProjectReference Include="..\dependencies\fullnode\src\Stratis.Bitcoin.Features.ColdStaking\Stratis.Bitcoin.Features.ColdStaking.csproj" />
+    <ProjectReference Include="..\dependencies\fullnode\src\Stratis.Bitcoin.Features.Miner\Stratis.Bitcoin.Features.Miner.csproj" />
+  </ItemGroup>
+
+</Project>

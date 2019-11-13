@@ -1,0 +1,56 @@
+Okay so 1st thing here. Stratis operates on proof of stake consensus mechanism. There are many different ways how to implement proof of stake. Stratis uses the way that evolved from several other coins – Peercoin, Novacoin, BlackCoin.
+This system is inherently different to how it is implemented in Ethereum or Cardano.
+The original code base that Peercoin was derived from was bitcoin. This means that all these coins including Stratis have a lot of same things as bitcoin. 1 of these things is that each block comes with a timestamp, which is encoded as a value called UNIX timestamp. It is a simple integer value that represents a number of seconds since 1 January 1970.(edited)
+
+aprogiena - Today at 08:02
+In Stratis, the consensus defines that only timestamps that are divisible by 16 are valid. This is absolutely critical to know for all calculations.
+
+Another consensus rule says that expected time of block is 64 seconds. We call that "target spacing". In bitcoin this is 10 minutes. And in bitcoin now timestamp by itself is invalid.
+
+Another rule says that in Stratis, unlike bitcoin, the timestamp of the next block has to be strictly greater than timestamp of the current block.
+In bitcoin, when a block is being mined, what essentially happens is that the miners are looking for a special value called nonce that is inserted inside of the block in order for that hash of its header to have some specific properties. At each moment there is certain target that has to be met by the next block to be accepted. The target is just a large number and the block will be accepted if the hash of its header is number that is lower than the target. Both the hash and the target are 32 byte numbers. The hash is just a random number which is always the same for the same input data.
+So as you can see, in bitcoin, the computer needs to iterate over different values of nonce over and over again until the hash meets the target. This is no is proof of work as you do millions and billions operations over and over again until you succeed.
+The difficulty is just nice-looking number that represents the target which is super big number. So there is some bound on what the highest target could be and that is denoted as difficulty 1. For any other target the difficulty is defined as the highest target possible divided by the current target. Therefore there is linear relation – difficulty 10 is simply the target which is calculated as the highest target divided by 10. This also means that it is 10 times more difficult to meet that target.
+
+Now in bitcoin, every 2016 blocks, the consensus defines the difficulty can be changed. And it is always changed in a way to adjust the difficulty in order to reach the target spacing for the next window (2016 blocks). Therefore let's say that our 2016 blocks were mined very quickly so that the spacing between the blocks in this window was 5 minutes on average. This means that the difficulty for the current window was too low compared to the hash power of all devices on the network. Therefore the next difficulty will be twice as much is it is now. This will last for 2016 blocks and after that we make that adjustment again.
+So that was bitcoin in couple of last paragraphs. How is it in Stratis? There are several different things. 1st of all we don't have to work, it is replaced with proof of stake. It works as follows.
+Just as with bitcoin, there is the target, there is the maximum target possible, there is difficulty calculated in very way. Just the conditions for which block is valid is not based on the hash of its header. There is a special transaction in each block called coinstake transaction. This coinstake transaction presents a coin which have to meet certain properties to be usable for the block – to meet the target and be considered valid.
+Each coin has its value – how many Satoshis it contains. One Stratis contains hundred million satoshis (just as one bitcoin). Each coin also was created via transaction in some block in the past. Each transaction has its unique ID and the coin in it does have an order number because there could be multiple coins created in 1 transaction.
+Now we calculate hash from these values of the coin (transaction ID, order number,...) And we compare that hash with the weighted target. The weighted target is simply the current target multiplied by the coin's value. And again – the hash is accepted if it is below the target.
+Now because this by itself would not guarantee success, we need to have something dynamic inside of that hash. And that would be the timestamp. So with each of your coins you get one hash every 16 seconds and this is all the computation you need to do in order to see if you have the right coin for the next block to be created. And because normally you have just small number of coins it takes almost no resources to check for that. And by small number of coins I don't mean their value I mean just different coins regardless of their value.
+
+Each coin in bitcoin in Stratis is represented by so-called UTXO, which stands for and spent transaction output. It is just a pair of transaction ID and order number together with the value associated. And when you use that coin for something – for example you send it to someone else or its part, it becomes STXO, spent transaction output. Only UTXOs are valid coins, not STXOs, which represent historic coins that are no longer valid.
+Now because of the weighted target, you can see trivially that more Stratis you hold, the better the chance that you will be allowed to create the next block with 1 of your coins.
+To close the 1st block of information I will just talk about changing the difficulty in Stratis. Unlike bitcoin, which defined the window of 2016 blocks after which the difficulty was recalculated, in Stratis the difficulty is recalculated after every block. Apart from that it works quite similarly, although no longer the relation is linear here. The calculation is done in a way that if instead of in 64 seconds a block was created after 16 seconds, which is the minimal increment of timestamp, then the difficulty will be increased by roughly 10%. For 32 seconds and for 48 seconds, the difficulty increase is slightly lower. In case of 64 seconds, the difficulty does not change. In case of higher number the difficulty is lowered. And the maximum factor by which it can be lowered is about 2, which happens when the next block is found after 10 or more minutes.
+Now please let me know if the above is clear or if you have any questions. I do not go farther until you confirm that it is clear.
+cosmo - Today at 10:19
+Ok this for the explanation, I was familiar with btc POW but it is even clearer now :smiley:
+Something I dont get in stratis
+Can coins have different values?
+Because you reference to coins values at various place but at the same time you said a coin was 100*10^6 Satoshi
+Aussi si je possede X coins
+Sorry
+Also, if I have X coins, can I try to mine the block with my X coins?
+I mean each one of them
+And how are coins created?
+1 coin = 1 transaction unspent output?
+*thank you not this in my first message
+*you refer
+So the more coin you have the more try you get to mine the block at each timestamp? And the more value your coin have the more you are favoured by the weighted target?
+Doesnt make this system super oligarchic?
+
+aprogiena - Today at 10:46
+When we say coin we mean UTXO. And that can have any value from one satoshi to number of existing strats
+When you receive 2 separated payments you received 2 coins usually. Imagine you have 100 Stratis in 1 coin. You greater transaction spending this coin as follows.
+
+10 Stratis goes to Alice.
+20 Stratis goes to Bob.
+69.99 goes back to you.
+The remaining is fee for the Miner
+So this transaction spent 1 coin and created 3 new coins
+And when you do the transaction you always need to spend the full coin. If you don't want to spend the full coin you need to send the rest back to you which is called a change. If you don't do this than the rest will go to the Miner as the fee and this is implicit.
+So it does not matter much how many coins you have in terms of how many UTXOs you have, what matters is the sum of value those coins have them. This is because the weighted target is weighted by the value not by the number of UTXOs.
+
+So for a single attempt – your chance to create the next block is equal when you have one coin with value of 1000 Stratis; or if you have hundred coins with value of 10 Stratis on each.
+Your chance is linearly proportional to how many Stratis you have. If you have 1,000,000 Stratis in any number of coins you have 1000 times better chance greater new block than someone who only has 1000 Stratis.
+New coin is created when you construct a new block. In the coinstake transaction you just claim one extra newly minted coin plus fees from transactions that you included

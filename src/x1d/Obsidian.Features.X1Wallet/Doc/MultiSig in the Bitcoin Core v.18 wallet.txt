@@ -1,0 +1,26 @@
+Multisig in the Bitcoin Core wallet:
+
+1.) Create a new address in your wallet:
+
+getnewaddress "addr for my multisig key" bech32
+bc1qa6uspswllkzd9wr978qqh4f377l3res6p36fsq
+
+2.) Get the raw hex pubkey of that address:
+
+getaddressinfo bc1qa6uspswllkzd9wr978qqh4f377l3res6p36fsq
+{
+  "address": "bc1qa6uspswllkzd9wr978qqh4f377l3res6p36fsq",
+  "pubkey": "026f43d51ba05b85593abc506b4089e73663770e62dfa41ddb8878b5339359ae76",
+  "label": "addr for my multisig key",
+}
+
+3.) Pass your hex raw pubkey to the other multisig signers, and get their raw pubkeys. For a 1-of-2 or 2-of-2 multisig address, you give your pubkey to Alice, and she gives you her pubkey. When all parties have exchanged their pubkeys, everyone does:
+
+createmultisig 1 "[\"026f43d51ba05b85593abc506b4089e73663770e62dfa41ddb8878b5339359ae76\",\"Alice_pubkey\"]" bech32
+bc1qt5lawy8yvnhqr8ujmst8834ztzr4rtp894k99fyah5ghch3g3g4q8l6lgv
+
+4.) Done, now you and Alice can receive coins on their multisig address bc1qt5lawy8yvnhqr8ujmst8834ztzr4rtp894k99fyah5ghch3g3g4q8l6lgv (note it's not the address you created in Step 1, i.e. not bc1qa6uspswllkzd9wr978qqh4f377l3res6p36fsq).
+If it's 1-of-2, you can just spend. If it's 2-of-2, you have to build the transaction first, sign it and pass it to Alice. She also needs to sign it, and can send it then. Or she passes it back to you, and you send it. Passing means, the hex test of the transaction.
+
+
+
