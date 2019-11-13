@@ -1,0 +1,21 @@
+name: .NET Core
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 3.0.100
+    - name: Sync Submodules
+      run:  git submodule sync --recursive
+    - name: Update Submodules
+      run: git submodule update --init --recursive
+    - name: Build with dotnet
+      run: dotnet build "./src/x1d/Obsidian.x1d/Obsidian.x1d.csproj" --configuration Release
