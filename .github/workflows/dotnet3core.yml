@@ -18,4 +18,4 @@ jobs:
     - name: Update Submodules
       run: git submodule update --init --recursive
     - name: Build with dotnet
-      run: dotnet build "./src/x1d/X1 Wallet.sln" --configuration Release
+      run: dotnet build "./src/x1d/Obsidian.x1d/Obsidian.x1d.csproj" --configuration Release
