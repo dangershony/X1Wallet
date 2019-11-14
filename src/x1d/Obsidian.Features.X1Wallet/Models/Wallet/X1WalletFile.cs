@@ -10,8 +10,14 @@ namespace Obsidian.Features.X1Wallet.Models.Wallet
 {
     public class X1WalletFile
     {
-        public const string FileExtension = ".x1wallet.json";
+        public X1WalletFile()
+        {
+            this.PubKeyHashAddresses = new Dictionary<string, PubKeyHashAddress>();
+            this.MultiSigAddresses = new Dictionary<string, MultiSigAddress>();
+            this.ColdStakingAddresses = new Dictionary<string, ColdStakingAddress>();
+        }
 
+        public const string FileExtension = ".x1wallet.json";
 
         public int Version { get; set; }
 
@@ -25,7 +31,7 @@ namespace Obsidian.Features.X1Wallet.Models.Wallet
         public int CoinType { get; set; }
 
         /// <summary>
-        /// A string to indentify the network, e.g. ODX, tODX, BTC, tBTC.
+        /// A string to identify the network, e.g. ODX, tODX, BTC, tBTC.
         /// </summary>
         public string CoinTicker { get; set; }
 
@@ -34,33 +40,25 @@ namespace Obsidian.Features.X1Wallet.Models.Wallet
         /// </summary>
         public Guid WalletGuid { get; set; }
 
-        public DateTime CreatedUtc { get; set; }
+        public long CreatedUtc { get; set; }
 
-        public DateTime ModifiedUtc { get; set; }
+        public long ModifiedUtc { get; set; }
 
-        public DateTime LastBackupUtc { get; set; }
-
-        public int SyncFromHeight { get; set; }
+        public long? LastBackupUtc { get; set; }
 
         public byte[] PassphraseChallenge { get; set; }
 
         public byte[] HdSeed { get; set; }
-        public string MockMnemonic { get; set; }
 
-        public Dictionary<string, P2WpkhAddress> Addresses { get; set; }
+        public bool HdSeedHasBip39Passphrase { get; set; }
 
-        public Dictionary<string, P2WshAddress> ScriptAddresses { get; set; }
-
-        public Dictionary<string, PubKeyHashAddress> PubKeyHashAddresses { get; set; }
+        public Dictionary<string, PubKeyHashAddress> PubKeyHashAddresses { get; set; } 
 
         public Dictionary<string, ColdStakingAddress> ColdStakingAddresses { get; set; }
 
         public Dictionary<string, MultiSigAddress> MultiSigAddresses { get; set; }
-        public bool HdSeedHasBip39Passphrase { get; internal set; }
 
-
-
-
+      
         public ISegWitAddress FindAddress(string bech32)
         {
             if (this.PubKeyHashAddresses.TryGetValue(bech32, out var pubKeyHashAddress))
@@ -122,7 +120,7 @@ namespace Obsidian.Features.X1Wallet.Models.Wallet
         /// We assume that all PubKeyHashAddress addresses in this file are already used. Therefore this method
         /// should only be called when the wallet is fully up-to-date so that all used addresses are already discovered.
         /// </summary>
-        List<PubKeyHashAddress> CreateNewAddresses(int isChange, string passphrase, int addressesToCreate = 1)
+        public List<PubKeyHashAddress> CreateNewAddresses(int isChange, string passphrase, int addressesToCreate = 1)
         {
             var nextIndex = GetNextIndex(isChange);
 
@@ -143,8 +141,8 @@ namespace Obsidian.Features.X1Wallet.Models.Wallet
                     Label = null,
                     ScriptPubKeyHex = scriptPubKey.ToHex()
                 };
-                address.Address = scriptPubKey.CreateBech32AddressFromScriptPubKey();
-                Debug.Assert(address.Address.Length == AddressHelper.Bech32PubKeyAddressLenght);
+                address.Address = scriptPubKey.GetAddressFromScriptPubKey();
+                Debug.Assert(address.Address.Length == C.PubKeyHashAddressLength);
                 newAddresses.Add(address);
                 this.PubKeyHashAddresses.Add(address.Address, address);
                 created++;

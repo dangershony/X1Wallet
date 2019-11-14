@@ -13,6 +13,8 @@
     <RootNamespace>Obsidian.x1d</RootNamespace>
     <ApplicationIcon />
     <Win32Resource />
+    <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
+    <RunAnalyzersDuringLiveAnalysis>false</RunAnalyzersDuringLiveAnalysis>
   </PropertyGroup>
 
   <ItemGroup>

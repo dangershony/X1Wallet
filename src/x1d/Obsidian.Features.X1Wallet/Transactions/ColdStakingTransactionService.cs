@@ -99,9 +99,7 @@ namespace Obsidian.Features.X1Wallet.Transactions
 
             foreach (var r in recipients)
             {
-                Script scriptPubKey = r.Address.Length == AddressHelper.Bech32PubKeyAddressLenght
-                    ? r.Address.ScriptPubKeyFromBech32Safe()
-                    : r.Address.ScriptPubKeyFromBech32ScriptAddressSafe();
+                Script scriptPubKey = r.Address.GetScriptPubKey();
                 builder.Send(scriptPubKey, r.Amount);
             }
 
@@ -209,7 +207,7 @@ namespace Obsidian.Features.X1Wallet.Transactions
 
         WalletContext GetWalletContext()
         {
-            return this.walletManagerFactory.GetWalletContext(this.walletName);
+            return this.walletManagerFactory.AutoLoad(this.walletName);
         }
 
 

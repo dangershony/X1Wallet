@@ -51,9 +51,7 @@ namespace Obsidian.Features.X1Wallet.Transactions
             foreach (Recipient recipient in recipients)
             {
                 recipientsAmount += recipient.Amount;
-                tx.Outputs.Add(recipient.Address.Length == AddressHelper.Bech32PubKeyAddressLenght
-                    ? new TxOut(recipient.Amount, recipient.Address.ScriptPubKeyFromBech32Safe())
-                    : new TxOut(recipient.Amount, recipient.Address.ScriptPubKeyFromBech32ScriptAddressSafe()));
+                tx.Outputs.Add(new TxOut(recipient.Amount, recipient.Address.GetScriptPubKey()));
             }
 
             // add burns
@@ -98,7 +96,7 @@ namespace Obsidian.Features.X1Wallet.Transactions
                     var change = selectedAmount - totalSendAmount - addedFee;
                     if (change > this.dustThreshold)
                     {
-                        TxOut changeOutput = GetOutputForChange();
+                        TxOut changeOutput = GetOutputForChange(passphrase, !sign);
                         changeOutput.Value = change;
                         tx.Outputs.Add(changeOutput);
                     }
@@ -156,19 +154,13 @@ namespace Obsidian.Features.X1Wallet.Transactions
             }
         }
 
-        TxOut GetOutputForChange()
+        TxOut GetOutputForChange(string passphrase, bool isDummy)
         {
-            using var walletContext = GetWalletContext();
-
-            P2WpkhAddress changeAddress = walletContext.WalletManager.GetUnusedAddress();
-
-            if (changeAddress == null)
+            using (var walletContext = GetWalletContext())
             {
-                changeAddress = walletContext.WalletManager.GetAllAddresses().First().Value;
-                this.logger.LogWarning("Caution, the wallet has run out off unused addresses, and will now use a used address as change address.");
+                var changeAddress = walletContext.WalletManager.GetUnusedChangeAddress(passphrase, isDummy);
+                return new TxOut(0, changeAddress.GetScriptPubKey());
             }
-
-            return new TxOut(0, changeAddress.ScriptPubKeyFromPublicKey());
         }
 
         static Key[] DecryptKeys(StakingCoin[] selectedCoins, string passphrase)
@@ -181,7 +173,7 @@ namespace Obsidian.Features.X1Wallet.Transactions
 
         WalletContext GetWalletContext()
         {
-            return this.walletManagerFactory.GetWalletContext(this.walletName);
+            return this.walletManagerFactory.AutoLoad(this.walletName);
         }
     }
 }

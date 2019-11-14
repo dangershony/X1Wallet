@@ -55,7 +55,7 @@ namespace Obsidian.Features.X1Wallet
 
         WalletContext GetWalletContext()
         {
-            return this.walletManagerFactory.GetWalletContext(this.walletName);
+            return this.walletManagerFactory.AutoLoad(this.walletName);
         }
 
         TransactionService GetTransactionService()
@@ -174,7 +174,7 @@ namespace Obsidian.Features.X1Wallet
             using var walletContext = GetWalletContext();
             {
                 walletContext.WalletManager.GetBudget(out Balance _);
-                recipients = walletContext.WalletManager.GetAllAddresses().Values.Take(count).Select(x => new Recipient { Address = x.Address, Amount = amount }).ToList();
+                recipients = walletContext.WalletManager.GetReceiveAddresses(count,false, request.Passphrase).Select(x => new Recipient { Address = x.Address, Amount = amount }).ToList();
             }
 
             TransactionResponse response = GetTransactionService().BuildTransaction(recipients, request.Sign, request.Passphrase);
@@ -285,16 +285,10 @@ namespace Obsidian.Features.X1Wallet
         {
             using (var context = GetWalletContext())
             {
-                var p2WpkhAddress = context.WalletManager.GetUnusedAddress();
-                bool isUsed = false;
-                if (p2WpkhAddress == null)
-                {
-                    p2WpkhAddress = context.WalletManager.GetAllAddresses().First().Value;
-                    isUsed = true;
-                }
+                PubKeyHashAddress receiveAddress = context.WalletManager.GetUnusedReceiveAddress();
 
                 var model = new GetAddressesResponse { Addresses = new List<AddressModel>() };
-                model.Addresses.Add(new AddressModel { Address = p2WpkhAddress.Address, IsUsed = isUsed, FullAddress = p2WpkhAddress });
+                model.Addresses.Add(new AddressModel { Address = receiveAddress.Address, IsUsed = false, FullAddress = receiveAddress });
                 return model;
             }
         }

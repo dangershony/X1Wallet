@@ -1,17 +1,20 @@
-﻿using System;
-using System.Threading.Tasks;
-using Obsidian.Features.X1Wallet.Feature;
-using Obsidian.Features.X1Wallet.SecureApi;
-using Obsidian.x1d.Api;
-using Obsidian.x1d.Util;
-using Stratis.Bitcoin.Builder;
-using Stratis.Bitcoin.Features.BlockStore;
-using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.MemoryPool;
-using Stratis.Bitcoin.Utilities;
+﻿using System.Runtime.CompilerServices;
 
+[assembly: InternalsVisibleTo("Obsidian.Features.X1Wallet.Tests")]
 namespace Obsidian.x1d
 {
+    using System;
+    using System.Threading.Tasks;
+    using Obsidian.Features.X1Wallet.Feature;
+    using Obsidian.Features.X1Wallet.SecureApi;
+    using Obsidian.x1d.Api;
+    using Obsidian.x1d.Util;
+    using Stratis.Bitcoin.Builder;
+    using Stratis.Bitcoin.Features.BlockStore;
+    using Stratis.Bitcoin.Features.Consensus;
+    using Stratis.Bitcoin.Features.MemoryPool;
+    using Stratis.Bitcoin.Utilities;
+
     public static class Program
     {
         public static void Main(string[] args)

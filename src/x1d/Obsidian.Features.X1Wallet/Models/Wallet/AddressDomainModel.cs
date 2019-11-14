@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using Obsidian.Features.X1Wallet.Tools;
 
 namespace Obsidian.Features.X1Wallet.Models.Wallet
@@ -36,6 +38,7 @@ namespace Obsidian.Features.X1Wallet.Models.Wallet
 
     public sealed class KeyMaterial
     {
+        [JsonConverter(typeof(StringEnumConverter))]
         public KeyType KeyType;
 
         public string KeyPath;
@@ -44,7 +47,7 @@ namespace Obsidian.Features.X1Wallet.Models.Wallet
 
         public int? IsChange;
 
-        public DateTime CreatedUtc;
+        public long CreatedUtc;
 
         public byte[] EncryptedPrivateKey;
     }
@@ -61,6 +64,7 @@ namespace Obsidian.Features.X1Wallet.Models.Wallet
     {
         public string Address { get; set; }
 
+        [JsonConverter(typeof(StringEnumConverter))]
         public AddressType AddressType { get; set; }
 
         public string ScriptPubKeyHex { get; set; }
@@ -71,7 +75,7 @@ namespace Obsidian.Features.X1Wallet.Models.Wallet
         /// This property must only be set while processing transactions from the blockchain.
         /// The presence of a valid date indicates that the address is a used address.
         /// </summary>
-        public DateTime? FirstSeenUtc { get; set; }
+        public long? FirstSeenUtc { get; set; }
 
         public KeyMaterial KeyMaterial;
 
@@ -79,6 +83,7 @@ namespace Obsidian.Features.X1Wallet.Models.Wallet
 
     public sealed class MultiSigAddress : ISegWitAddress, ISegWitScriptAddress
     {
+        [JsonConverter(typeof(StringEnumConverter))]
         public AddressType AddressType { get; set; }
 
         public string Address { get; set; }
@@ -106,6 +111,7 @@ namespace Obsidian.Features.X1Wallet.Models.Wallet
     {
         public string Address { get; set; }
 
+        [JsonConverter(typeof(StringEnumConverter))]
         public AddressType AddressType { get; set; }
 
         public string ScriptPubKeyHex { get; set; }

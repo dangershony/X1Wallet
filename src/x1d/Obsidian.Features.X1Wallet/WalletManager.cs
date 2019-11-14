@@ -32,7 +32,7 @@ using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 using VisualCrypt.VisualCryptLight;
-using static Obsidian.Features.X1Wallet.Tools.NotNullExtension;
+using static Obsidian.Features.X1Wallet.Tools.Extensions;
 
 namespace Obsidian.Features.X1Wallet
 {
@@ -80,7 +80,6 @@ namespace Obsidian.Features.X1Wallet
             ICoinView coinView, IDateTimeProvider dateTimeProvider
             )
         {
-            AddressHelper.Init(network);
             this.CurrentX1WalletFilePath = x1WalletFilePath;
 
             this.X1WalletFile = WalletHelper.LoadX1WalletFile(x1WalletFilePath);
@@ -120,20 +119,20 @@ namespace Obsidian.Features.X1Wallet
                 WalletFilePath = this.CurrentX1WalletFilePath,
                 SyncedHeight = this.Metadata.SyncedHeight,
                 SyncedHash = this.Metadata.SyncedHash,
-                Adresses = this.X1WalletFile.Addresses.Count,
+                Adresses = this.X1WalletFile.PubKeyHashAddresses.Count,
+                MultiSigAddresses = this.X1WalletFile.MultiSigAddresses.Count,
+                ColdStakingAddresses = this.X1WalletFile.ColdStakingAddresses.Count,
                 StakingInfo = GetStakingInfo(),
                 MemoryPool = this.Metadata.MemoryPool,
                 PassphraseChallenge = this.X1WalletFile.PassphraseChallenge.ToHexString()
 
             };
 
-            var unused = GetUnusedAddress();
+            var unused = GetUnusedReceiveAddress();
             if (unused != null)
                 info.UnusedAddress = unused.Address;
             else
                 info.UnusedAddress = "n/a";
-
-            info.DefaultAddress = GetAllAddresses().First().Key;
 
             GetBudget(out var balance);
             info.Balance = balance;
@@ -281,6 +280,8 @@ namespace Obsidian.Features.X1Wallet
                 CompleteStart();
         }
 
+        
+
         internal string EnsureDummyMultiSig1Of2Address()
         {
             var passphrase = "passwordpassword";
@@ -293,9 +294,7 @@ namespace Obsidian.Features.X1Wallet
                 var wl = Wordlist.English;
                 var mnemonic = new Mnemonic(wl, hdBytes);
                 byte[] hdSeed = mnemonic.DeriveSeed("");
-
                 this.X1WalletFile.HdSeed = VCL.EncryptWithPassphrase(passphrase, hdSeed);
-                this.X1WalletFile.MockMnemonic = mnemonic.ToString();
             }
 
 
@@ -322,33 +321,34 @@ namespace Obsidian.Features.X1Wallet
             Script scriptPubKey = redeemScript.WitHash.ScriptPubKey;
             var scp = scriptPubKey.ToString();
 
-            if (this.X1WalletFile.ScriptAddresses == null)
-                this.X1WalletFile.ScriptAddresses = new Dictionary<string, P2WshAddress>();
+            throw new NotImplementedException();
+            //if (this.X1WalletFile.ScriptAddresses == null)
+            //    this.X1WalletFile.ScriptAddresses = new Dictionary<string, P2WshAddress>();
 
-            if (this.X1WalletFile.ScriptAddresses.ContainsKey(bech32ScriptAddress))
-                this.X1WalletFile.ScriptAddresses.Remove(bech32ScriptAddress);
+            //if (this.X1WalletFile.ScriptAddresses.ContainsKey(bech32ScriptAddress))
+            //    this.X1WalletFile.ScriptAddresses.Remove(bech32ScriptAddress);
 
-            if (!this.X1WalletFile.ScriptAddresses.ContainsKey(bech32ScriptAddress))
-            {
-                this.X1WalletFile.ScriptAddresses.Add(bech32ScriptAddress,
-                    new P2WshAddress
-                    {
-                        Address = bech32ScriptAddress,
-                        ScriptPubKey = scriptPubKey.ToBytes(),
-                        RedeemScript = redeemScript.ToBytes(),
-                        AddressType = AddressType.MultiSig,
-                        CompressedPublicKey = myPubKey.ToBytes(),
-                        EncryptedPrivateKey = myKeyMaterial.EncryptedPrivateKey,
-                        Description = "My and Bob's 1-of-2 MultiSig account",
-                        PartnerPublicKeys = new[]{ new PartnerPublicKey
-                        {
-                            Label = "Bob",
-                            CompressedPublicKey=otherPubKey.ToBytes()
-                        }}
-                    });
-                this.X1WalletFile.SaveX1WalletFile(this.CurrentX1WalletFilePath);
-            }
-            return bech32ScriptAddress;
+            //if (!this.X1WalletFile.ScriptAddresses.ContainsKey(bech32ScriptAddress))
+            //{
+            //    this.X1WalletFile.ScriptAddresses.Add(bech32ScriptAddress,
+            //        new P2WshAddress
+            //        {
+            //            Address = bech32ScriptAddress,
+            //            ScriptPubKey = scriptPubKey.ToBytes(),
+            //            RedeemScript = redeemScript.ToBytes(),
+            //            AddressType = AddressType.MultiSig,
+            //            CompressedPublicKey = myPubKey.ToBytes(),
+            //            EncryptedPrivateKey = myKeyMaterial.EncryptedPrivateKey,
+            //            Description = "My and Bob's 1-of-2 MultiSig account",
+            //            PartnerPublicKeys = new[]{ new PartnerPublicKey
+            //            {
+            //                Label = "Bob",
+            //                CompressedPublicKey=otherPubKey.ToBytes()
+            //            }}
+            //        });
+            //    this.X1WalletFile.SaveX1WalletFile(this.CurrentX1WalletFilePath);
+            //}
+            //return bech32ScriptAddress;
         }
 
 
@@ -365,7 +365,7 @@ namespace Obsidian.Features.X1Wallet
 
             var seed = VCL.DecryptWithPassphrase(passphrase, this.X1WalletFile.HdSeed);
 
-            KeyMaterial coldKeyMaterial  = KeyHelper.CreateHdKeyMaterial(seed, passphrase, this.coinType, AddressType.ColdStakingCold, 0, 0);
+            KeyMaterial coldKeyMaterial = KeyHelper.CreateHdKeyMaterial(seed, passphrase, this.coinType, AddressType.ColdStakingCold, 0, 0);
             PubKey coldPubKey = coldKeyMaterial.GetKey(passphrase).PubKey.Compress();
 
             KeyMaterial hotKeyMaterial = KeyHelper.CreateHdKeyMaterial(seed, passphrase, this.coinType, AddressType.ColdStakingHot, 0, 0);
@@ -379,36 +379,36 @@ namespace Obsidian.Features.X1Wallet
 
             string bech32ScriptAddress = csRedeemScript.WitHash.GetAddress(this.network).ToString();
 
-           
-           
+
+
             var scp = scriptPubKey.ToString();
+            throw new NotImplementedException();
+            //if (this.X1WalletFile.ScriptAddresses == null)
+            //    this.X1WalletFile.ScriptAddresses = new Dictionary<string, P2WshAddress>();
 
-            if (this.X1WalletFile.ScriptAddresses == null)
-                this.X1WalletFile.ScriptAddresses = new Dictionary<string, P2WshAddress>();
+            //if (this.X1WalletFile.ScriptAddresses.ContainsKey(bech32ScriptAddress))
+            //    this.X1WalletFile.ScriptAddresses.Remove(bech32ScriptAddress);
 
-            if (this.X1WalletFile.ScriptAddresses.ContainsKey(bech32ScriptAddress))
-                this.X1WalletFile.ScriptAddresses.Remove(bech32ScriptAddress);
-
-            if (!this.X1WalletFile.ScriptAddresses.ContainsKey(bech32ScriptAddress))
-            {
-                //this.X1WalletFile.ScriptAddresses.Add(bech32ScriptAddress,
-                //    new P2WshAddress
-                //    {
-                //        Address = bech32ScriptAddress,
-                //        ScriptPubKey = scriptPubKey.ToBytes(),
-                //        RedeemScript = redeemScript.ToBytes(),
-                //        AddressType = AddressType.HdMultiSig,
-                //        CompressedPublicKey = myMultiSigPublicKeyBytes,
-                //        EncryptedPrivateKey = myMultiSigPrivate.EncryptedPrivateKey,
-                //        Description = "My and Bob's 1-of-2 MultiSig account",
-                //        PartnerPublicKeys = new[]{ new PartnerPublicKey
-                //        {
-                //            Label = "Bob",
-                //            CompressedPublicKey=partnerMultiSigPublicKeyBytes2
-                //        }}
-                //    });
-                //this.X1WalletFile.SaveX1WalletFile(this.CurrentX1WalletFilePath);
-            }
+            //if (!this.X1WalletFile.ScriptAddresses.ContainsKey(bech32ScriptAddress))
+            //{
+            //    //this.X1WalletFile.ScriptAddresses.Add(bech32ScriptAddress,
+            //    //    new P2WshAddress
+            //    //    {
+            //    //        Address = bech32ScriptAddress,
+            //    //        ScriptPubKey = scriptPubKey.ToBytes(),
+            //    //        RedeemScript = redeemScript.ToBytes(),
+            //    //        AddressType = AddressType.HdMultiSig,
+            //    //        CompressedPublicKey = myMultiSigPublicKeyBytes,
+            //    //        EncryptedPrivateKey = myMultiSigPrivate.EncryptedPrivateKey,
+            //    //        Description = "My and Bob's 1-of-2 MultiSig account",
+            //    //        PartnerPublicKeys = new[]{ new PartnerPublicKey
+            //    //        {
+            //    //            Label = "Bob",
+            //    //            CompressedPublicKey=partnerMultiSigPublicKeyBytes2
+            //    //        }}
+            //    //    });
+            //    //this.X1WalletFile.SaveX1WalletFile(this.CurrentX1WalletFilePath);
+            //}
 
             //var scpAsString = scriptPubKey.ToString();
             //var paymentScript = scriptPubKey.PaymentScript;
@@ -677,8 +677,9 @@ namespace Obsidian.Features.X1Wallet
             int successCount = 0;
             try
             {
-                var addresses = this.X1WalletFile.Addresses.Values;
-                header.AppendLine($"{this.X1WalletFile.Addresses.Count} found in wallet.");
+                // TODO: also support export of coldstaking and multisig addresses
+                var addresses = this.X1WalletFile.PubKeyHashAddresses.Values;
+                header.AppendLine($"{this.X1WalletFile.PubKeyHashAddresses.Count} found in wallet.");
 
                 var enc = new Bech32Encoder($"{this.network.CoinTicker.ToLowerInvariant()}key");
 
@@ -686,7 +687,7 @@ namespace Obsidian.Features.X1Wallet
                 {
                     try
                     {
-                        var decryptedKey = VCL.DecryptWithPassphrase(exportKeysRequest.WalletPassphrase, a.EncryptedPrivateKey);
+                        var decryptedKey = VCL.DecryptWithPassphrase(exportKeysRequest.WalletPassphrase, a.KeyMaterial.EncryptedPrivateKey);
                         if (decryptedKey == null)
                         {
                             errorCount++;
@@ -745,30 +746,36 @@ namespace Obsidian.Features.X1Wallet
             SaveMetadata();
         }
 
-
-
-
-
-
-        public P2WpkhAddress GetUnusedAddress()
+        public PubKeyHashAddress GetUnusedReceiveAddress()
         {
-            foreach (P2WpkhAddress address in this.X1WalletFile.Addresses.Values)
+           return this.X1WalletFile.GetReceiveAddress(false, null);
+        }
+
+        public PubKeyHashAddress GetUnusedChangeAddress(string passphrase, bool isDummy)
+        {
+            return this.X1WalletFile.GetChangeAddress(passphrase, isDummy);
+        }
+
+       
+
+        public PubKeyHashAddress[] GetReceiveAddresses(int count, bool used, string passphrase)
+        {
+            if (used)
             {
-                if (IsAddressUsedInConfirmedTransactions(address))
-                    continue;
-                return address;
+                return this.X1WalletFile.PubKeyHashAddresses.Values.Take(count).ToArray();
             }
-            return null;
+            else
+            {
+                return this.X1WalletFile.CreateNewAddresses(C.External, passphrase, count).ToArray();
+            }
+           
         }
 
-        internal P2WpkhAddress GetAddress(string address)
+        public PubKeyHashAddress[] GetPubKeyHashAddresses(int isChange, int? take)
         {
-            return this.X1WalletFile.Addresses[address];
-        }
-
-        internal Dictionary<string, P2WpkhAddress> GetAllAddresses()
-        {
-            return this.X1WalletFile.Addresses;
+            return take.HasValue
+                ? this.X1WalletFile.PubKeyHashAddresses.Values.Where(x => x.KeyMaterial.IsChange == isChange).Take(take.Value).ToArray()
+                : this.X1WalletFile.PubKeyHashAddresses.Values.Where(x => x.KeyMaterial.IsChange == isChange).ToArray();
         }
 
         public StakingCoin[] GetBudget(out Balance balance, bool forStaking = false)
@@ -820,24 +827,23 @@ namespace Obsidian.Features.X1Wallet
 
                             totalReceived += utxo.Satoshis;
 
-                            throw new NotImplementedException();
-                            //var coin = new StakingCoin(utxo.HashTx,
-                            //    utxo.Index,
-                            //    Money.Satoshis(utxo.Satoshis),
-                            //    address.ScriptPubKeyFromPublicKey(),
-                            //    address.EncryptedPrivateKey,
-                            //    utxo.Address, height, block.HashBlock, block.Time);
+                            var coin = new StakingCoin(utxo.HashTx,
+                                utxo.Index,
+                                Money.Satoshis(utxo.Satoshis),
+                                address.GetScriptPubKey(),
+                                ((P2WpkhAddress)address).EncryptedPrivateKey,
+                                utxo.Address, height, block.HashBlock, block.Time);
 
-                            //if (!isImmatureForSpending)
-                            //{
-                            //    spendable += utxo.Satoshis;
-                            //    spendableMature.Add(utxo.GetKey(), coin);
-                            //}
-                            //if (!isImmatureForStaking)
-                            //{
-                            //    stakable += utxo.Satoshis;
-                            //    stakableMature.Add(utxo.GetKey(), coin);
-                            //}
+                            if (!isImmatureForSpending)
+                            {
+                                spendable += utxo.Satoshis;
+                                spendableMature.Add(utxo.GetKey(), coin);
+                            }
+                            if (!isImmatureForStaking)
+                            {
+                                stakable += utxo.Satoshis;
+                                stakableMature.Add(utxo.GetKey(), coin);
+                            }
                         }
                     }
                     if (tx.Spent != null)
@@ -875,13 +881,13 @@ namespace Obsidian.Features.X1Wallet
 
                         totalUnconfirmedReceived += utxo.Satoshis;
                         throw new NotImplementedException();
-                        //var coin = new StakingCoin(utxo.HashTx,
-                        //    utxo.Index,
-                        //    Money.Satoshis(utxo.Satoshis),
-                        //    address.ScriptPubKeyFromPublicKey(),
-                        //    address.EncryptedPrivateKey,
-                        //    utxo.Address, int.MaxValue, null, item.TransactionTime);
-                        //spendableMature.Add(utxo.GetKey(), coin);
+                        var coin = new StakingCoin(utxo.HashTx,
+                            utxo.Index,
+                            Money.Satoshis(utxo.Satoshis),
+                            address.GetScriptPubKey(),
+                            ((P2WpkhAddress)address).EncryptedPrivateKey,
+                            utxo.Address, int.MaxValue, null, item.TransactionTime);
+                        spendableMature.Add(utxo.GetKey(), coin);
                     }
                 }
                 if (tx.Spent != null)
@@ -971,25 +977,25 @@ namespace Obsidian.Features.X1Wallet
 
                             totalReceived += utxo.Satoshis;
                             throw new NotImplementedException();
-                            //var coin = new StakingCoin(utxo.HashTx,
-                            //    utxo.Index,
-                            //    Money.Satoshis(utxo.Satoshis),
-                            //    new Script(scriptAddress.ScriptPubKey),
-                            //    address.EncryptedPrivateKey,
-                            //    utxo.Address, height, block.HashBlock, block.Time,
-                            //    new Script(scriptAddress.RedeemScript)
-                            //    );
+                            var coin = new StakingCoin(utxo.HashTx,
+                                utxo.Index,
+                                Money.Satoshis(utxo.Satoshis),
+                                new Script(scriptAddress.ScriptPubKey),
+                                ((P2WshAddress)address).EncryptedPrivateKey,
+                                utxo.Address, height, block.HashBlock, block.Time,
+                                new Script(scriptAddress.RedeemScript)
+                                );
 
-                            //if (!isImmatureForSpending)
-                            //{
-                            //    spendable += utxo.Satoshis;
-                            //    spendableMature.Add(utxo.GetKey(), coin);
-                            //}
-                            //if (!isImmatureForStaking)
-                            //{
-                            //    stakable += utxo.Satoshis;
-                            //    stakableMature.Add(utxo.GetKey(), coin);
-                            //}
+                            if (!isImmatureForSpending)
+                            {
+                                spendable += utxo.Satoshis;
+                                spendableMature.Add(utxo.GetKey(), coin);
+                            }
+                            if (!isImmatureForStaking)
+                            {
+                                stakable += utxo.Satoshis;
+                                stakableMature.Add(utxo.GetKey(), coin);
+                            }
                         }
                     }
                     if (tx.Spent != null)
@@ -1026,16 +1032,15 @@ namespace Obsidian.Features.X1Wallet
                         }
 
                         totalUnconfirmedReceived += utxo.Satoshis;
-                        throw new NotImplementedException();
-                        //var coin = new StakingCoin(utxo.HashTx,
-                        //    utxo.Index,
-                        //    Money.Satoshis(utxo.Satoshis),
-                        //    new Script(scriptAddress.ScriptPubKey),
-                        //    address.EncryptedPrivateKey,
-                        //    utxo.Address, int.MaxValue, null, item.TransactionTime,
-                        //    new Script(scriptAddress.RedeemScript)
-                        //    );
-                        //spendableMature.Add(utxo.GetKey(), coin);
+                        var coin = new StakingCoin(utxo.HashTx,
+                            utxo.Index,
+                            Money.Satoshis(utxo.Satoshis),
+                            new Script(scriptAddress.ScriptPubKey),
+                            ((P2WshAddress)address).EncryptedPrivateKey,
+                            utxo.Address, int.MaxValue, null, item.TransactionTime,
+                            new Script(scriptAddress.RedeemScript)
+                            );
+                        spendableMature.Add(utxo.GetKey(), coin);
                     }
                 }
                 if (tx.Spent != null)
@@ -1079,9 +1084,7 @@ namespace Obsidian.Features.X1Wallet
 
         ISegWitAddress GetOwnAddress(string bech32Address)
         {
-            if (this.X1WalletFile.Addresses.TryGetValue(bech32Address, out var address))
-                return address;
-            return this.X1WalletFile.ScriptAddresses[bech32Address];
+            return this.X1WalletFile.FindAddress(bech32Address);
         }
 
         public HistoryInfo GetHistoryInfo(HistoryRequest historyRequest)
@@ -1251,7 +1254,7 @@ namespace Obsidian.Features.X1Wallet
 
             foreach (var output in transaction.Outputs)
             {
-                ISegWitAddress ownAddress = FindAddressByScriptPubKey(output.ScriptPubKey);
+                ISegWitAddress ownAddress = GetOwnAddress(output.ScriptPubKey.GetAddressFromScriptPubKey());
                 if (ownAddress != null)
                 {
                     NotNull(ref received, transaction.Outputs.Count);
@@ -1276,7 +1279,7 @@ namespace Obsidian.Features.X1Wallet
                         NotNull(ref notInWallet, transaction.Outputs.Count);
                         var dest = new UtxoMetadata
                         {
-                            Address = output.ScriptPubKey.CreateBech32AddressFromScriptPubKey(),
+                            Address = output.ScriptPubKey.GetAddressFromScriptPubKey(),
                             HashTx = transaction.GetHash(),
                             Satoshis = output.Value != null ? output.Value.Satoshi : 0,
                             Index = index
@@ -1423,29 +1426,11 @@ namespace Obsidian.Features.X1Wallet
 
         #region private Methods
 
-        ISegWitAddress FindAddressByScriptPubKey(Script scriptPubKey)
-        {
-            if (scriptPubKey.IsOpReturn() || scriptPubKey.IsEmpty())
-                return null;
-
-            var address = scriptPubKey.CreateBech32AddressFromScriptPubKey();
-            if (address.Length == AddressHelper.Bech32PubKeyAddressLenght)
-            {
-                this.X1WalletFile.Addresses.TryGetValue(address, out P2WpkhAddress pubKeyAddress);
-                return pubKeyAddress;
-            }
-            if (address.Length == AddressHelper.Bech32ScriptAddressLenght)
-            {
-                this.X1WalletFile.ScriptAddresses.TryGetValue(address, out P2WshAddress scriptAddress);
-                return scriptAddress;
-            }
-            throw new X1WalletException(HttpStatusCode.BadRequest, $"Unexpected address lenght: {address}");
-        }
+        
 
 
 
-
-        bool IsAddressUsedInConfirmedTransactions(P2WpkhAddress address)
+        bool IsAddressUsedInConfirmedTransactions(ISegWitAddress address)
         {
             // slow version
             foreach (BlockMetadata block in this.Metadata.Blocks.Values)

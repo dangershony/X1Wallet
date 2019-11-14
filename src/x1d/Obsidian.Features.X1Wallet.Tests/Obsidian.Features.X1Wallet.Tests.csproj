@@ -4,6 +4,10 @@
     <TargetFramework>netcoreapp3.0</TargetFramework>
 
     <IsPackable>false</IsPackable>
+
+    <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
+
+    <RunAnalyzersDuringLiveAnalysis>false</RunAnalyzersDuringLiveAnalysis>
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,6 +22,7 @@
     <ProjectReference Include="..\dependencies\fullnode\src\Obsidian.Networks.ObsidianX\Obsidian.Networks.ObsidianX.csproj" />
     <ProjectReference Include="..\dependencies\fullnode\src\Stratis.Bitcoin.Networks\Stratis.Bitcoin.Networks.csproj" />
     <ProjectReference Include="..\Obsidian.Features.X1Wallet\Obsidian.Features.X1Wallet.csproj" />
+    <ProjectReference Include="..\Obsidian.x1d\Obsidian.x1d.csproj" />
   </ItemGroup>
 
 </Project>

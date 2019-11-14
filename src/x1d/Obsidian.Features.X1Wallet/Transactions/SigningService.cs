@@ -83,7 +83,7 @@ namespace Obsidian.Features.X1Wallet.Transactions
 
         static uint256 GetHashToSign(Transaction tx, int index, string address, Money amount)
         {
-            Script scriptCode = GetScriptCode(address.ScriptPubKeyFromBech32Safe());
+            Script scriptCode = GetScriptCode(address.GetScriptPubKey());
 
             const SigHash nHashType = SigHash.All;
 

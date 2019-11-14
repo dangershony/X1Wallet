@@ -82,7 +82,7 @@ namespace Obsidian.x1d.Util
                     new Recipient
                     {
                         Address = "odx1qpm3mfhpfyepugg629k4tgwllxjf285vwwd3f4h", // in my wallet
-                        Amount = 2 * Satoshi.Long,
+                        Amount = 2 * C.SatoshisPerCoin,
 
                     }
                 },
@@ -199,9 +199,9 @@ namespace Obsidian.x1d.Util
             //}
             // await Task.Delay(10000);
             var model = Controller.GetUnusedReceiveAddresses();
-            var address = model.Addresses[0].FullAddress;
+            var address = model.Addresses[0].Address;
 
-            var script = new ReserveScript { ReserveFullNodeScript = address.ScriptPubKeyFromPublicKey() };
+            var script = new ReserveScript { ReserveFullNodeScript = address.GetScriptPubKey() };
             _ = Task.Run(() =>
             {
                 _logger.LogInformation("Starting Miner...");

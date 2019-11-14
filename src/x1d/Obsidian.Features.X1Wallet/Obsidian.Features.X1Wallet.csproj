@@ -10,6 +10,8 @@
     <Company>X1Wallet</Company>
     <Product>X1Wallet</Product>
     <AssemblyName>X1Wallet</AssemblyName>
+    <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
+    <RunAnalyzersDuringLiveAnalysis>false</RunAnalyzersDuringLiveAnalysis>
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,6 +20,10 @@
     <ProjectReference Include="..\dependencies\fullnode\src\Obsidian.Networks.ObsidianX\Obsidian.Networks.ObsidianX.csproj" />
     <ProjectReference Include="..\dependencies\fullnode\src\Stratis.Bitcoin.Features.ColdStaking\Stratis.Bitcoin.Features.ColdStaking.csproj" />
     <ProjectReference Include="..\dependencies\fullnode\src\Stratis.Bitcoin.Features.Miner\Stratis.Bitcoin.Features.Miner.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Extensions\" />
   </ItemGroup>
 
 </Project>

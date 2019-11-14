@@ -43,8 +43,6 @@ namespace Obsidian.Features.X1Wallet.Feature
 
         public override Task InitializeAsync()
         {
-            IsDefaultBlockHashExtension.Init(this.network);
-
             this.connectionManager.Parameters.TemplateBehaviors.Add(this.broadcasterBehavior);
 
             return Task.CompletedTask;
@@ -59,7 +57,7 @@ namespace Obsidian.Features.X1Wallet.Feature
         {
             WriteDaemonInfo(log);
 
-            using (var context = this.walletManagerFactory.GetWalletContext(null, true))
+            using (var context = this.walletManagerFactory.AutoLoad(null, true))
             {
                 string loadedWalletName = context?.WalletManager.WalletName;
                 this.walletController.SetWalletName(loadedWalletName, true);

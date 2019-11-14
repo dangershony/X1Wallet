@@ -8,6 +8,6 @@ namespace Obsidian.Features.X1Wallet.Models.Api
        
         public bool IsUsed { get; set; }
       
-        public P2WpkhAddress FullAddress { get; internal set; }
+        public PubKeyHashAddress FullAddress { get; set; }
     }
 }

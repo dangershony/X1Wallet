@@ -1,30 +1,24 @@
-﻿using System;
-using Microsoft.Extensions.Logging;
-using NBitcoin;
-using Obsidian.Networks.ObsidianX;
-using Stratis.Bitcoin;
-using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Features.Wallet.Interfaces;
-using Stratis.Bitcoin.Interfaces;
-using Stratis.Bitcoin.Utilities;
-using Xunit.Abstractions;
-
-namespace Obsidian.Features.X1Wallet.Tests.Fakes
+﻿namespace Obsidian.Features.X1Wallet.Tests.Fakes
 {
+    using System;
+    using Microsoft.Extensions.Logging;
+    using NBitcoin;
+    using Obsidian.Networks.ObsidianX;
+    using Stratis.Bitcoin;
+    using Stratis.Bitcoin.Base;
+    using Stratis.Bitcoin.Configuration;
+    using Stratis.Bitcoin.Connection;
+    using Stratis.Bitcoin.Features.Wallet.Interfaces;
+    using Stratis.Bitcoin.Interfaces;
+    using Stratis.Bitcoin.Utilities;
+    using Xunit.Abstractions;
+
     class FakeFactory
     {
-        public static Lazy<FakeFactory> Instance = new Lazy<FakeFactory>(() =>
-        {
-            var ff = new FakeFactory(null);
-            return ff;
-        }, true);
-
         readonly ITestOutputHelper testOutputHelper;
 
         readonly WalletManagerFactory walletManagerFactory;
-        readonly Network network;
+        public readonly Network network;
         readonly IConnectionManager connectionManager;
         readonly ChainIndexer chainIndexer;
         readonly IBroadcasterManager broadcasterManager;
@@ -35,6 +29,7 @@ namespace Obsidian.Features.X1Wallet.Tests.Fakes
         readonly IChainState chainState;
         readonly INetworkDifficulty networkDifficulty;
         readonly ILoggerFactory loggerFactory;
+        public readonly DataFolder dataFolder;
         readonly ILogger logger;
 
         public FakeFactory(ITestOutputHelper testOutputHelper)
@@ -43,6 +38,8 @@ namespace Obsidian.Features.X1Wallet.Tests.Fakes
 
             this.network = ObsidianXNetworksSelector.Obsidian.Mainnet();
             this.loggerFactory = new TestLoggerFactory(testOutputHelper);
+            this.nodeSettings = Obsidian.x1d.Util.Init.GetNodeSettings(new string[0]);
+            this.dataFolder = this.nodeSettings.DataFolder;
         }
 
         public WalletController CreateWalletController()
@@ -55,7 +52,8 @@ namespace Obsidian.Features.X1Wallet.Tests.Fakes
                 chainIndexer: null,
                 broadcasterManager: null,
                 dateTimeProvider: null,
-                fullNode: null, nodeSettings: null,
+                fullNode: null,
+                nodeSettings: this.nodeSettings,
                 chainState: null,
                 networkDifficulty: null,
                 network: this.network,
@@ -66,7 +64,7 @@ namespace Obsidian.Features.X1Wallet.Tests.Fakes
 
         public WalletManagerFactory CreateWalletManagerFactory()
         {
-            var factory = new WalletManagerFactory(dataFolder: null, chainIndexer: null, network: this.network,
+            var factory = new WalletManagerFactory(dataFolder: this.dataFolder, chainIndexer: null, network: this.network,
                 broadcasterManager: null, this.loggerFactory, nodeLifetime: null, signals: null, blockStore: null,
                 timeSyncBehaviorState: null, initialBlockDownloadState: null,
                 blockProvider: null, consensusManager: null, stakeChain: null, coinView: null, dateTimeProvider: null);
