@@ -128,11 +128,17 @@ namespace Obsidian.Features.X1Wallet
 
             };
 
-            var unused = GetUnusedReceiveAddress();
-            if (unused != null)
-                info.UnusedAddress = unused.Address;
-            else
-                info.UnusedAddress = "n/a";
+            try
+            {
+                var unusedReceiveAddress = GetUnusedReceiveAddress();
+                info.UnusedAddress = unusedReceiveAddress.Address;  // this throws if unusedReceiveAddress is null, which would be a bug
+            }
+            catch (X1WalletException e)
+            {
+                if (e.HttpStatusCode != HttpStatusCode.NotFound)
+                    throw;
+                info.UnusedAddress = e.Message;
+            }
 
             GetBudget(out var balance);
             info.Balance = balance;
@@ -280,7 +286,7 @@ namespace Obsidian.Features.X1Wallet
                 CompleteStart();
         }
 
-        
+
 
         internal string EnsureDummyMultiSig1Of2Address()
         {
@@ -746,9 +752,12 @@ namespace Obsidian.Features.X1Wallet
             SaveMetadata();
         }
 
+        /// <summary>
+        /// Gets an unused receive address or throws en exception.
+        /// </summary>
         public PubKeyHashAddress GetUnusedReceiveAddress()
         {
-           return this.X1WalletFile.GetReceiveAddress(false, null);
+            return this.X1WalletFile.GetReceiveAddress(false, null);
         }
 
         public PubKeyHashAddress GetUnusedChangeAddress(string passphrase, bool isDummy)
@@ -756,7 +765,7 @@ namespace Obsidian.Features.X1Wallet
             return this.X1WalletFile.GetChangeAddress(passphrase, isDummy);
         }
 
-       
+
 
         public PubKeyHashAddress[] GetReceiveAddresses(int count, bool used, string passphrase)
         {
@@ -768,7 +777,7 @@ namespace Obsidian.Features.X1Wallet
             {
                 return this.X1WalletFile.CreateNewAddresses(C.External, passphrase, count).ToArray();
             }
-           
+
         }
 
         public PubKeyHashAddress[] GetPubKeyHashAddresses(int isChange, int? take)
@@ -778,11 +787,11 @@ namespace Obsidian.Features.X1Wallet
                 : this.X1WalletFile.PubKeyHashAddresses.Values.Where(x => x.KeyMaterial.IsChange == isChange).ToArray();
         }
 
-        public StakingCoin[] GetBudget(out Balance balance, bool forStaking = false)
+        public SegWitCoin[] GetBudget(out Balance balance, bool forStaking = false, string matchAddress = null, AddressType matchAddressType = AddressType.MatchAll)
         {
 
-            var spendableMature = new Dictionary<string, StakingCoin>();
-            var stakableMature = new Dictionary<string, StakingCoin>();
+            var spendableMature = new Dictionary<string, SegWitCoin>();
+            var stakableMature = new Dictionary<string, SegWitCoin>();
 
             var spent = new Dictionary<string, UtxoMetadata>();
 
@@ -791,9 +800,6 @@ namespace Obsidian.Features.X1Wallet
 
             long spendable = 0;
             long stakable = 0;
-
-            long totalMultiSigReceived = 0; // temp
-            long totalMultiSigReceivedUnconfirmed = 0; // temp
 
             foreach (var b in this.Metadata.Blocks)
             {
@@ -814,25 +820,14 @@ namespace Obsidian.Features.X1Wallet
                     var confirmationsStaking = this.Metadata.SyncedHeight - height + 1; // if the tip is at 100 and my tx is height 90, it's 11 confirmations
                     isImmatureForStaking = confirmationsStaking < this.network.Consensus.MaxReorgLength; // ok
 
-                    if (tx.Received != null)
+                    foreach (UtxoMetadata utxo in tx.Received.Values)
                     {
-                        foreach (UtxoMetadata utxo in tx.Received.Values)
+                        for (var address = GetOwnAddress(utxo.Address).Match(matchAddress, matchAddressType);
+                            address != null; address = null)
                         {
-                            ISegWitAddress address = GetOwnAddress(utxo.Address);
-                            if (address is P2WshAddress p2Wsh)
-                            {
-                                totalMultiSigReceived += utxo.Satoshis;
-                                continue; // with next output of tx.Received, which may be a normal output, e.g. the change, if we sent to a multisig adr in our wallet
-                            }
-
                             totalReceived += utxo.Satoshis;
 
-                            var coin = new StakingCoin(utxo.HashTx,
-                                utxo.Index,
-                                Money.Satoshis(utxo.Satoshis),
-                                address.GetScriptPubKey(),
-                                ((P2WpkhAddress)address).EncryptedPrivateKey,
-                                utxo.Address, height, block.HashBlock, block.Time);
+                            var coin = new SegWitCoin(address, utxo.HashTx, utxo.Index, utxo.Satoshis);
 
                             if (!isImmatureForSpending)
                             {
@@ -845,14 +840,12 @@ namespace Obsidian.Features.X1Wallet
                                 stakableMature.Add(utxo.GetKey(), coin);
                             }
                         }
+
                     }
-                    if (tx.Spent != null)
+                    foreach (var s in tx.Spent)
                     {
-                        foreach (var s in tx.Spent)
-                        {
-                            totalSent += s.Value.Satoshis;
-                            spent.Add(s.Key, s.Value);
-                        }
+                        totalSent += s.Value.Satoshis;
+                        spent.Add(s.Key, s.Value);
                     }
                 }
             }
@@ -867,189 +860,19 @@ namespace Obsidian.Features.X1Wallet
             foreach (var item in this.Metadata.MemoryPool.Entries.OrderBy(x => x.TransactionTime))
             {
                 var tx = item.Transaction;
-                if (tx.Received != null)
+                foreach (UtxoMetadata utxo in tx.Received.Values)
                 {
-                    foreach (UtxoMetadata utxo in tx.Received.Values)
-                    {
-                        ISegWitAddress address = GetOwnAddress(utxo.Address);
+                    ISegWitAddress address = GetOwnAddress(utxo.Address);
 
-                        if (address is P2WshAddress p2Wsh)
-                        {
-                            totalMultiSigReceivedUnconfirmed += utxo.Satoshis;
-                            continue; // with next output of tx.Received, which may be a normal output, e.g. the change, if we sent to a multisig adr in our wallet
-                        }
+                    totalReceived += utxo.Satoshis;
 
-                        totalUnconfirmedReceived += utxo.Satoshis;
-                        throw new NotImplementedException();
-                        var coin = new StakingCoin(utxo.HashTx,
-                            utxo.Index,
-                            Money.Satoshis(utxo.Satoshis),
-                            address.GetScriptPubKey(),
-                            ((P2WpkhAddress)address).EncryptedPrivateKey,
-                            utxo.Address, int.MaxValue, null, item.TransactionTime);
-                        spendableMature.Add(utxo.GetKey(), coin);
-                    }
+                    var coin = new SegWitCoin(address, utxo.HashTx, utxo.Index, utxo.Satoshis);
+                    spendableMature.Add(utxo.GetKey(), coin);
                 }
-                if (tx.Spent != null)
+                foreach (var s in tx.Spent)
                 {
-                    foreach (var s in tx.Spent)
-                    {
-                        totalUnconfirmedSent += s.Value.Satoshis;
-                        spent.Add(s.Key, s.Value);
-                    }
-                }
-            }
-
-            foreach (var utxoId in spent)
-            {
-                if (spendableMature.ContainsKey(utxoId.Key))
-                {
-                    spendable -= utxoId.Value.Satoshis;
-                    spendableMature.Remove(utxoId.Key);
-                }
-                if (stakableMature.ContainsKey(utxoId.Key))
-                {
-                    stakable -= utxoId.Value.Satoshis;
-                    stakableMature.Remove(utxoId.Key);
-                }
-            }
-
-            balance = new Balance
-            {
-                Confirmed = totalReceived - totalSent,
-                Pending = totalUnconfirmedReceived - totalUnconfirmedSent,
-                Spendable = spendable,
-                Stakable = stakable,
-                MSigRecConf = totalMultiSigReceived,
-                MSigRecPending = totalMultiSigReceivedUnconfirmed
-            };
-
-            if (forStaking)
-                return stakableMature.Values.ToArray();
-            return spendableMature.Values.ToArray();
-
-        }
-
-        public StakingCoin[] GetMultiSigBudget(out Balance balance, string multiSigAddress, bool forStaking = false)
-        {
-
-            var spendableMature = new Dictionary<string, StakingCoin>();
-            var stakableMature = new Dictionary<string, StakingCoin>();
-
-            var spent = new Dictionary<string, UtxoMetadata>();
-
-            long totalReceived = 0;
-            long totalSent = 0;
-
-            long spendable = 0;
-            long stakable = 0;
-
-
-            foreach (var b in this.Metadata.Blocks)
-            {
-                var height = b.Key;
-                var block = b.Value;
-
-                foreach (var tx in block.Transactions)
-                {
-                    bool isImmatureForSpending = false;
-                    bool isImmatureForStaking = false;
-
-                    if (tx.TxType == TxType.Coinbase || tx.TxType == TxType.Coinstake || tx.TxType == TxType.CoinstakeLegacy)
-                    {
-                        var confirmationsSpending = this.Metadata.SyncedHeight - height + 1; // if the tip is at 100 and my tx is height 90, it's 11 confirmations
-                        isImmatureForSpending = confirmationsSpending < this.network.Consensus.CoinbaseMaturity; // ok
-                    }
-
-                    var confirmationsStaking = this.Metadata.SyncedHeight - height + 1; // if the tip is at 100 and my tx is height 90, it's 11 confirmations
-                    isImmatureForStaking = confirmationsStaking < this.network.Consensus.MaxReorgLength; // ok
-
-                    if (tx.Received != null)
-                    {
-                        foreach (UtxoMetadata utxo in tx.Received.Values)
-                        {
-                            ISegWitAddress address = GetOwnAddress(utxo.Address);
-                            var scriptAddress = address as P2WshAddress;
-                            if (scriptAddress == null || address.Address != multiSigAddress)
-                            {
-                                continue;
-                            }
-
-                            totalReceived += utxo.Satoshis;
-                            throw new NotImplementedException();
-                            var coin = new StakingCoin(utxo.HashTx,
-                                utxo.Index,
-                                Money.Satoshis(utxo.Satoshis),
-                                new Script(scriptAddress.ScriptPubKey),
-                                ((P2WshAddress)address).EncryptedPrivateKey,
-                                utxo.Address, height, block.HashBlock, block.Time,
-                                new Script(scriptAddress.RedeemScript)
-                                );
-
-                            if (!isImmatureForSpending)
-                            {
-                                spendable += utxo.Satoshis;
-                                spendableMature.Add(utxo.GetKey(), coin);
-                            }
-                            if (!isImmatureForStaking)
-                            {
-                                stakable += utxo.Satoshis;
-                                stakableMature.Add(utxo.GetKey(), coin);
-                            }
-                        }
-                    }
-                    if (tx.Spent != null)
-                    {
-                        foreach (var s in tx.Spent)
-                        {
-                            totalSent += s.Value.Satoshis;
-                            spent.Add(s.Key, s.Value);
-                        }
-                    }
-                }
-            }
-
-
-
-            // unconfirmed - add them last, ordered by time, so that they come last in coin selection
-            // when unconfirmed outputs gets spend, to allow the memory pool and network to recognize 
-            // the new unspent outputs
-            long totalUnconfirmedReceived = 0;
-            long totalUnconfirmedSent = 0;
-            foreach (var item in this.Metadata.MemoryPool.Entries.OrderBy(x => x.TransactionTime))
-            {
-                var tx = item.Transaction;
-                if (tx.Received != null)
-                {
-                    foreach (UtxoMetadata utxo in tx.Received.Values)
-                    {
-                        ISegWitAddress address = GetOwnAddress(utxo.Address);
-
-                        var scriptAddress = address as P2WshAddress;
-                        if (scriptAddress == null || address.Address != multiSigAddress)
-                        {
-                            continue;
-                        }
-
-                        totalUnconfirmedReceived += utxo.Satoshis;
-                        var coin = new StakingCoin(utxo.HashTx,
-                            utxo.Index,
-                            Money.Satoshis(utxo.Satoshis),
-                            new Script(scriptAddress.ScriptPubKey),
-                            ((P2WshAddress)address).EncryptedPrivateKey,
-                            utxo.Address, int.MaxValue, null, item.TransactionTime,
-                            new Script(scriptAddress.RedeemScript)
-                            );
-                        spendableMature.Add(utxo.GetKey(), coin);
-                    }
-                }
-                if (tx.Spent != null)
-                {
-                    foreach (var s in tx.Spent)
-                    {
-                        totalUnconfirmedSent += s.Value.Satoshis;
-                        spent.Add(s.Key, s.Value);
-                    }
+                    totalUnconfirmedSent += s.Value.Satoshis;
+                    spent.Add(s.Key, s.Value);
                 }
             }
 
@@ -1078,9 +901,7 @@ namespace Obsidian.Features.X1Wallet
             if (forStaking)
                 return stakableMature.Values.ToArray();
             return spendableMature.Values.ToArray();
-
         }
-
 
         ISegWitAddress GetOwnAddress(string bech32Address)
         {
@@ -1209,7 +1030,7 @@ namespace Obsidian.Features.X1Wallet
 
                     if (!this.Metadata.Blocks.TryGetValue(blockHeight, out BlockMetadata walletBlock))
                     {
-                        walletBlock = new BlockMetadata { HashBlock = block.GetHash(), Time = block.Header.Time, Transactions = new HashSet<TransactionMetadata>() };
+                        walletBlock = new BlockMetadata { HashBlock = block.GetHash(), Time = block.Header.Time };
                         this.Metadata.Blocks.Add(blockHeight, walletBlock);
                     }
                     walletBlock.Transactions.Add(walletTransaction);
@@ -1227,7 +1048,6 @@ namespace Obsidian.Features.X1Wallet
         {
             var spent = ExtractOutgoingFunds(transaction, out var amountSpent);
             var received = ExtractIncomingFunds(transaction, spent != null, out var amountReceived, out var destinations);
-
 
             if (received == null && spent == null)
                 return null;
@@ -1254,11 +1074,13 @@ namespace Obsidian.Features.X1Wallet
 
             foreach (var output in transaction.Outputs)
             {
-                ISegWitAddress ownAddress = GetOwnAddress(output.ScriptPubKey.GetAddressFromScriptPubKey());
+                ISegWitAddress ownAddress = null;
+
+                if (!output.IsProtocolOutput(transaction))
+                    ownAddress = GetOwnAddress(output.ScriptPubKey.GetAddressFromScriptPubKey());
+
                 if (ownAddress != null)
                 {
-                    NotNull(ref received, transaction.Outputs.Count);
-
                     var item = new UtxoMetadata
                     {
                         Address = ownAddress.Address,
@@ -1426,7 +1248,7 @@ namespace Obsidian.Features.X1Wallet
 
         #region private Methods
 
-        
+
 
 
 

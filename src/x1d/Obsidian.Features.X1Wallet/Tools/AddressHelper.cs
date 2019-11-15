@@ -5,6 +5,8 @@ using NBitcoin;
 using NBitcoin.DataEncoders;
 using Obsidian.Features.X1Wallet.Feature;
 using Obsidian.Features.X1Wallet.Models.Wallet;
+using Obsidian.Features.X1Wallet.Staking;
+using VisualCrypt.VisualCryptLight;
 
 namespace Obsidian.Features.X1Wallet.Tools
 {
@@ -50,7 +52,7 @@ namespace Obsidian.Features.X1Wallet.Tools
             throw InvalidAddress(bech32Address);
         }
 
-       
+
 
         /// <summary>
         /// This can be the witness commitment in the coinbase transaction or any burn.
@@ -104,6 +106,27 @@ namespace Obsidian.Features.X1Wallet.Tools
             return address;
         }
 
+        public static bool IsProtocolOutput(this TxOut txOut, Transaction transaction)
+        {
+            if (transaction.IsCoinBase)
+            {
+                if (txOut.ScriptPubKey.IsEmpty())
+                    return true; // in a PoS block the first output of the coinstake tx is empty
+                if (txOut.ScriptPubKey.IsOpReturn())
+                    return true; // witness commitment
+            }
+
+            if (transaction.IsCoinStake)
+            {
+                if (txOut.ScriptPubKey.IsEmpty())
+                    return true; // this normally the empty first output (PoS marker)
+                if (txOut.ScriptPubKey.IsOpReturn())
+                    return true; // this is the public key, for ODX at index 1 in a coinstake tx
+            }
+
+            return false;
+        }
+
         public static string ToPubKeyHashAddress(this byte[] hash160)
         {
             KeyHelper.CheckBytes(hash160, 20);
@@ -118,10 +141,41 @@ namespace Obsidian.Features.X1Wallet.Tools
             return ScriptAddressEncoder.Encode(0, hash256);
         }
 
+        public static ISegWitAddress Match(this ISegWitAddress segWitAddress, string address = null, AddressType addressType = AddressType.MatchAll)
+        {
+            if (segWitAddress == null)  // no op
+                return null;
+
+            if (address != null) // filter by address
+            {
+                if (segWitAddress.Address == address)
+                {
+                    if (addressType == AddressType.MatchAll || addressType == segWitAddress.AddressType)
+                        return segWitAddress;
+                    return null;
+                }
+                return null;
+            }
+
+            // do not filter by address
+            if (addressType == AddressType.MatchAll)
+                return segWitAddress;
+
+            if (addressType == segWitAddress.AddressType)
+                return segWitAddress;
+
+            return null;
+        }
+
+        public static Key GetPrivateKey(this SegWitCoin segWitCoin, string passphrase)
+        {
+            return new Key(VCL.DecryptWithPassphrase(passphrase, segWitCoin.SegWitAddress.GetEncryptedPrivateKey()));
+        }
+
         static X1WalletException InvalidAddress(string input, Exception innerException = null)
         {
             var message = $"Invalid address '{input ?? "null"}'.";
-           return new X1WalletException(System.Net.HttpStatusCode.BadRequest, message, innerException);
+            return new X1WalletException(System.Net.HttpStatusCode.BadRequest, message, innerException);
         }
 
         static X1WalletException InvalidScriptPubKey(Script input, Exception innerException = null)

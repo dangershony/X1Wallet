@@ -8,6 +8,8 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.Crypto;
+using Obsidian.Features.X1Wallet.Models.Wallet;
+using Obsidian.Features.X1Wallet.Tools;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -163,9 +165,9 @@ namespace Obsidian.Features.X1Wallet.Staking
             return this.stakeChain.Get(this.consensusManager.Tip.HashBlock).StakeModifierV2;
         }
 
-        List<StakingCoin> FindValidKernels(StakingCoin[] coins)
+        List<SegWitCoin> FindValidKernels(SegWitCoin[] coins)
         {
-            var validKernels = new List<StakingCoin>();
+            var validKernels = new List<SegWitCoin>();
             foreach (var c in coins)
             {
                 if (CheckStakeKernelHash(c))
@@ -174,9 +176,9 @@ namespace Obsidian.Features.X1Wallet.Staking
             return validKernels;
         }
 
-        bool CheckStakeKernelHash(StakingCoin stakingCoin)
+        bool CheckStakeKernelHash(SegWitCoin segWitCoin)
         {
-            BigInteger value = BigInteger.ValueOf(stakingCoin.Amount.Satoshi);
+            BigInteger value = BigInteger.ValueOf(segWitCoin.UtxoValue);
             BigInteger weightedTarget = this.PosV3.TargetAsBigInteger.Multiply(value);
 
             uint256 kernelHash;
@@ -188,12 +190,12 @@ namespace Obsidian.Features.X1Wallet.Staking
                 if (this.network.CreateTransaction() is PosTransaction)
                 {
                     //serializer.ReadWrite(stakingCoin.Time); // be sure this is uint
-                    var oldFunnyTime = this.coinView.FetchCoins(new[] { stakingCoin.Outpoint.Hash }).UnspentOutputs[0].Time;
+                    var oldFunnyTime = this.coinView.FetchCoins(new[] { segWitCoin.UtxoTxHash }).UnspentOutputs[0].Time;
                     serializer.ReadWrite(oldFunnyTime); // it should be block time, but due to a bug in ppcoin we need oldFunnyTime
                 }
 
-                serializer.ReadWrite(stakingCoin.Outpoint.Hash);
-                serializer.ReadWrite(stakingCoin.Outpoint.N);
+                serializer.ReadWrite(segWitCoin.UtxoTxHash);
+                serializer.ReadWrite(segWitCoin.UtxoTxN);
                 serializer.ReadWrite((uint)this.PosV3.CurrentBlockTime); // be sure this is uint
                 kernelHash = Hashes.Hash256(ms.ToArray());
             }
@@ -208,31 +210,32 @@ namespace Obsidian.Features.X1Wallet.Staking
             return this.blockProvider.BuildPosBlock(this.consensusManager.Tip, new Script());
         }
 
-        void CreateNextBlock(BlockTemplate blockTemplate, List<StakingCoin> kernelCoins)
+        void CreateNextBlock(BlockTemplate blockTemplate, List<SegWitCoin> kernelCoins)
         {
-            StakingCoin kernelCoin = kernelCoins[0];
+            SegWitCoin kernelCoin = kernelCoins[0];
             foreach (var coin in kernelCoins)
-                if (coin.Amount < kernelCoin.Amount)
+                if (coin.UtxoValue < kernelCoin.UtxoValue)
                     kernelCoin = coin;
 
             var newBlockHeight = this.consensusManager.Tip.Height + 1;
 
             var totalReward = blockTemplate.TotalFee + this.posCoinViewRule.GetProofOfStakeReward(newBlockHeight);
 
-            var key = new Key(VCL.DecryptWithPassphrase(this.passphrase, kernelCoin.EncryptedPrivateKey));
+            var encryptedKey = kernelCoin.SegWitAddress.GetEncryptedPrivateKey();
+            Key key = new Key(VCL.DecryptWithPassphrase(this.passphrase, encryptedKey));
 
             Transaction tx = this.network.CreateTransaction();
 
             if (tx is PosTransaction posTransaction)
                 posTransaction.Time = blockTemplate.Block.Header.Time = ((PosTransaction)blockTemplate.Block.Transactions[0]).Time = (uint)this.PosV3.CurrentBlockTime;
 
-            tx.AddInput(new TxIn(kernelCoin.Outpoint));
+            tx.AddInput(new TxIn(new OutPoint(kernelCoin.UtxoTxHash, kernelCoin.UtxoTxN)));
 
             tx.Outputs.Add(new TxOut(0, Script.Empty));
             tx.Outputs.Add(new TxOut(0, new Script(OpcodeType.OP_RETURN, Op.GetPushOp(key.PubKey.Compress().ToBytes()))));
-            tx.Outputs.Add(new TxOut(totalReward + kernelCoin.Amount, kernelCoin.ScriptPubKey));
+            tx.Outputs.Add(new TxOut(totalReward + kernelCoin.UtxoValue, kernelCoin.SegWitAddress.GetScriptPubKey()));
 
-            tx.Sign(this.network, new[] { key }, new ICoin[] { kernelCoin });
+            tx.Sign(this.network, new[] { key }, new ICoin[] { kernelCoin.ToCoin() });
 
             blockTemplate.Block.Transactions.Insert(1, tx);
 
@@ -273,8 +276,8 @@ namespace Obsidian.Features.X1Wallet.Staking
             this.LastStakedBlock.TxId = chainedHeader.Block.Transactions[1].GetHash();
             this.LastStakedBlock.Transactions = chainedHeader.Block.Transactions.Count;
             this.LastStakedBlock.TotalReward = totalReward;
-            this.LastStakedBlock.KernelAddress = kernelCoin.Address;
-            this.LastStakedBlock.WeightUsed = kernelCoin.Amount;
+            this.LastStakedBlock.KernelAddress = kernelCoin.SegWitAddress.Address;
+            this.LastStakedBlock.WeightUsed = kernelCoin.UtxoValue;
             this.LastStakedBlock.TotalComputeTimeMs = this.stopwatch.ElapsedMilliseconds;
             this.LastStakedBlock.BlockTime = this.PosV3.CurrentBlockTime;
             this.Status.BlocksAccepted += 1;
@@ -313,13 +316,13 @@ namespace Obsidian.Features.X1Wallet.Staking
             return (int)(this.PosV3.BlockInterval + expectedTimeSeconds);
         }
 
-        StakingCoin[] GetUnspentOutputs()
+        SegWitCoin[] GetUnspentOutputs()
         {
             try
             {
                 this.walletManager.WalletSemaphore.Wait();
 
-                var coins = this.walletManager.GetBudget(out var balance, true);
+                var coins = this.walletManager.GetBudget(out var balance, true, matchAddress: null, AddressType.PubKeyHash);
 
                 this.Status.UnspentOutputs = coins.Length;
                 this.Status.Weight = balance.Stakable;

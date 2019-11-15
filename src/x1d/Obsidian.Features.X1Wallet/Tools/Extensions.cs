@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Reflection;
 using NBitcoin;
+using Obsidian.Features.X1Wallet.Staking;
 
 namespace Obsidian.Features.X1Wallet.Tools
 {
@@ -31,6 +32,14 @@ namespace Obsidian.Features.X1Wallet.Tools
         {
             if (list == null)
                 list = new Dictionary<K, T>(capacity);
+        }
+
+        public static Coin ToCoin(this SegWitCoin segWitCoin)
+        {
+            var outpoint = new OutPoint(segWitCoin.UtxoTxHash, segWitCoin.UtxoTxN);
+            var txOut = new TxOut(segWitCoin.UtxoValue, segWitCoin.SegWitAddress.GetScriptPubKey());
+            var coin = new Coin(outpoint, txOut);
+            return coin;
         }
     }
 }

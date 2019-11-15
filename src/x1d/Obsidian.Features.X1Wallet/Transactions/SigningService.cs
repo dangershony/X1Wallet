@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Linq;
 using NBitcoin;
 using NBitcoin.Crypto;
 using Obsidian.Features.X1Wallet.Staking;
@@ -8,9 +7,9 @@ using Obsidian.Features.X1Wallet.Tools;
 
 namespace Obsidian.Features.X1Wallet.Transactions
 {
-    public class SigningService
+    public static class SigningService
     {
-        public static void SignInputs(Transaction transaction, Key[] keys, StakingCoin[] coins)
+        public static void SignInputs(Transaction transaction, Key[] keys, SegWitCoin[] coins)
         {
             for (var i = 0; i < transaction.Inputs.Count; i++)
             {
@@ -21,11 +20,11 @@ namespace Obsidian.Features.X1Wallet.Transactions
             }
         }
 
-        static void SignInput(TxIn txin, Key key, StakingCoin coin, int index, Transaction transaction)
+        static void SignInput(TxIn txin, Key key, SegWitCoin coin, int index, Transaction transaction)
         {
-            if (coin.RedeemScript == null)
+            if (coin.SegWitAddress.AddressType ==  Models.Wallet.AddressType.PubKeyHash)
             {
-                uint256 signatureHash = GetHashToSign(transaction, index, coin.Address, coin.TxOut.Value);
+                uint256 signatureHash = GetHashToSign(transaction, index, coin.SegWitAddress.GetScriptPubKey(), coin.UtxoValue);
 
                 byte[] finalSig = GetSignature(signatureHash, key);
 
@@ -34,38 +33,7 @@ namespace Obsidian.Features.X1Wallet.Transactions
             }
             else
             {
-                uint256 signatureHash = GetHashToSignMultiSig(transaction, index, coin, coin.TxOut.Value);
-
-                byte[] finalSig = GetSignature(signatureHash, key);
-
-                //txin.WitScript = new WitScript(Op.GetPushOp(finalSig),
-                //    Op.GetPushOp(key.PubKey.Compress().ToBytes()));
-
-                //txin.WitScript = new WitScript(Op.GetPushOp(finalSig), // error Stack
-                //   Op.GetPushOp(coin.RedeemScript.ToBytes()));
-
-                // ([sig ...] num_of_signatures [pubkey ...] num_of_pubkeys -- bool)
-
-                var result = new Script(OpcodeType.OP_0); // pop-one-too-many workaround
-
-                result += Op.GetPushOp(finalSig);
-                //result += OpcodeType.OP_0;
-                //result += Op.GetPushOp(key.PubKey.Compress().ToBytes());
-                // result += Op.GetPushOp(coin.RedeemScript.ToBytes());
-                //https://www.soroushjp.com/2014/12/20/bitcoin-multisig-the-hard-way-understanding-raw-multisignature-bitcoin-transactions/
-                System.Collections.Generic.IList<Op> ops = result.ToOps();
-                foreach (var o in coin.RedeemScript.ToOps())
-                    ops.Add(o);
-                var w = new WitScript(ops.ToArray());
-                txin.WitScript = w;
-                //txin.WitScript = new WitScript(
-                //    Op.GetPushOp(finalSig),
-                //    Op.GetPushOp(1),
-                //    Op.GetPushOp(key.PubKey.Compress().ToBytes()),
-                //    //Op.GetPushOp(1),
-                //    Op.GetPushOp(coin.RedeemScript.ToBytes())
-
-                //   );
+                throw new NotImplementedException();
             }
 
         }
@@ -81,9 +49,9 @@ namespace Obsidian.Features.X1Wallet.Transactions
             return finalSig;
         }
 
-        static uint256 GetHashToSign(Transaction tx, int index, string address, Money amount)
+        static uint256 GetHashToSign(Transaction tx, int index, Script addressScriptPubKey, Money amount)
         {
-            Script scriptCode = GetScriptCode(address.GetScriptPubKey());
+            Script scriptCode = GetScriptCode(addressScriptPubKey);
 
             const SigHash nHashType = SigHash.All;
 
@@ -106,6 +74,7 @@ namespace Obsidian.Features.X1Wallet.Transactions
             sss.ReadWrite(tx.Inputs[index].PrevOut);
             sss.ReadWrite(scriptCode);
             sss.ReadWrite(amount.Satoshi);
+            // ReSharper disable once RedundantCast
             sss.ReadWrite((uint)tx.Inputs[index].Sequence);
             // Outputs (none/one/all, depending on flags)
             sss.ReadWrite(hashOutputs);
@@ -118,53 +87,6 @@ namespace Obsidian.Features.X1Wallet.Transactions
 
             return hashToSign;
         }
-
-
-        static uint256 GetHashToSignMultiSig(Transaction tx, int index, StakingCoin coin, Money amount)
-        {
-            bool isRedeemValid = PayToWitScriptHashTemplate.Instance.CheckScriptPubKey(coin.ScriptPubKey);
-            WitKeyId key = PayToWitPubKeyHashTemplate.Instance.ExtractScriptPubKeyParameters(null, coin.ScriptPubKey);
-            Script scriptCode;
-            if (key != null)
-                scriptCode = key.AsKeyId().ScriptPubKey;
-            else
-                scriptCode = coin.ScriptPubKey;
-
-            const SigHash nHashType = SigHash.All;
-
-            if (amount == null)
-                throw new ArgumentException("The amount of the output being signed must be provided", nameof(amount));
-
-            uint256 hashPrevouts = GetHashPrevouts(tx);
-            uint256 hashSequence = GetHashSequence(tx);
-            uint256 hashOutputs = GetHashOutputs(tx);
-
-            BitcoinStream sss = CreateHashWriter(HashVersion.Witness);
-            // Version
-            sss.ReadWrite(tx.Version);
-            // Input prevouts/nSequence (none/all, depending on flags)
-            sss.ReadWrite(hashPrevouts);
-            sss.ReadWrite(hashSequence);
-            // The input being signed (replacing the scriptSig with scriptCode + amount)
-            // The prevout may already be contained in hashPrevout, and the nSequence
-            // may already be contain in hashSequence.
-            sss.ReadWrite(tx.Inputs[index].PrevOut);
-            sss.ReadWrite(scriptCode);
-            sss.ReadWrite(amount.Satoshi);
-            sss.ReadWrite((uint)tx.Inputs[index].Sequence);
-            // Outputs (none/one/all, depending on flags)
-            sss.ReadWrite(hashOutputs);
-            // Locktime
-            sss.ReadWriteStruct(tx.LockTime);
-            // Sighash type
-            sss.ReadWrite((uint)nHashType);
-
-            uint256 hashToSign = GetHash(sss);
-
-            return hashToSign;
-        }
-
-
 
         static Script GetScriptCode(Script scriptPubKey)
         {
@@ -212,6 +134,7 @@ namespace Obsidian.Features.X1Wallet.Transactions
             BitcoinStream ss = CreateHashWriter(HashVersion.Witness);
             foreach (TxIn input in txTo.Inputs)
             {
+                // ReSharper disable once RedundantCast
                 ss.ReadWrite((uint)input.Sequence);
             }
             hashSequence = GetHash(ss);

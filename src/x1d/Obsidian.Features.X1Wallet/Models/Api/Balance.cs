@@ -2,8 +2,6 @@
 {
     public class Balance
     {
-        
-
         /// <summary>
         /// The balance of confirmed transactions.
         /// </summary>
@@ -21,8 +19,6 @@
 
         public long Stakable;
 
-        public long MSigRecConf;
-        public long MSigRecPending;
        
     }
 }

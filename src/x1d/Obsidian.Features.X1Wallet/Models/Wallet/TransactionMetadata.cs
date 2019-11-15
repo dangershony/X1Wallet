@@ -6,19 +6,38 @@ using Newtonsoft.Json.Converters;
 
 namespace Obsidian.Features.X1Wallet.Models.Wallet
 {
-    public class TransactionMetadata : IEquatable<TransactionMetadata>
+    public sealed class TransactionMetadata : IEquatable<TransactionMetadata>
     {
-        public long ValueAdded;
+        static readonly  Dictionary<string, UtxoMetadata> Empty = new Dictionary<string, UtxoMetadata>(0);
 
+        Dictionary<string, UtxoMetadata> received;
+        Dictionary<string, UtxoMetadata> spent;
+        Dictionary<string, UtxoMetadata> destinations;
+
+        public long ValueAdded;
+       
         [JsonConverter(typeof(StringEnumConverter))]
         public TxType TxType { get; set; }
 
         public uint256 HashTx { get; set; }
 
-        public Dictionary<string, UtxoMetadata> Received { get; set; }
+        public Dictionary<string, UtxoMetadata> Received
+        {
+            get => this.received ?? Empty;
+            set => this.received = value ?? Empty;
+        }
 
-        public Dictionary<string, UtxoMetadata> Spent { get; set; }
-        public Dictionary<string, UtxoMetadata> Destinations { get; set; }
+        public Dictionary<string, UtxoMetadata> Spent
+        {
+            get => this.spent ?? Empty;
+            set => this.spent = value ?? Empty;
+        }
+
+        public Dictionary<string, UtxoMetadata> Destinations
+        {
+            get => this.destinations ?? Empty;
+            set => this.destinations = value ?? Empty;
+        }
 
         #region overrides of Equals, GetHashCode, ==, !=
 

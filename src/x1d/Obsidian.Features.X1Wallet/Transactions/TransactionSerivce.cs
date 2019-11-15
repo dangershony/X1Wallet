@@ -69,7 +69,7 @@ namespace Obsidian.Features.X1Wallet.Transactions
             // calculate size, fee and change amount
             long addedFee = this.minimumPossibleFee;
 
-            StakingCoin[] selectedCoins;
+            SegWitCoin[] selectedCoins;
 
             while (true)
             {
@@ -83,8 +83,8 @@ namespace Obsidian.Features.X1Wallet.Transactions
                 foreach (var c in selectedCoins)
                 {
                     selectedCount++;
-                    selectedAmount += c.Amount;
-                    tx.Inputs.Add(new TxIn(c.Outpoint));
+                    selectedAmount += c.UtxoValue;
+                    tx.Inputs.Add(new TxIn(new OutPoint(c.UtxoTxHash, c.UtxoTxN)));
                 }
 
                 var virtualSize = tx.GetVirtualSize() + selectedCount * SignatureVirtualSize + ChangeOutputVirtualSize;
@@ -129,11 +129,11 @@ namespace Obsidian.Features.X1Wallet.Transactions
 
 
 
-        IEnumerable<StakingCoin> AddCoins(long totalAmountToSend, long fee)
+        IEnumerable<SegWitCoin> AddCoins(long totalAmountToSend, long fee)
         {
             long totalToSelect = totalAmountToSend + fee;
 
-            IReadOnlyList<StakingCoin> budget;
+            IReadOnlyList<SegWitCoin> budget;
             Balance balance;
             using (var walletContext = GetWalletContext())
             {
@@ -148,8 +148,8 @@ namespace Obsidian.Features.X1Wallet.Transactions
             long selectedAmount = 0;
             while (selectedAmount < totalToSelect)
             {
-                StakingCoin coin = budget[pointer++];
-                selectedAmount += coin.Amount.Satoshi;
+                SegWitCoin coin = budget[pointer++];
+                selectedAmount += coin.UtxoValue;
                 yield return coin;
             }
         }
@@ -163,11 +163,11 @@ namespace Obsidian.Features.X1Wallet.Transactions
             }
         }
 
-        static Key[] DecryptKeys(StakingCoin[] selectedCoins, string passphrase)
+        static Key[] DecryptKeys(SegWitCoin[] selectedCoins, string passphrase)
         {
             var keys = new Key[selectedCoins.Length];
             for (var i = 0; i < keys.Length; i++)
-                keys[i] = new Key(VCL.DecryptWithPassphrase(passphrase, selectedCoins[i].EncryptedPrivateKey));
+                keys[i] = selectedCoins[i].GetPrivateKey(passphrase);
             return keys;
         }
 

@@ -151,31 +151,24 @@ namespace Obsidian.Features.X1Wallet.Transactions
 
         IEnumerable<ScriptCoin> GetAllCoinsForMultiSigAccount(string sourceMultiSigAddress, string passphrase, out Script scriptPubKeyForChange, out Key ownPrivateKey)
         {
-
-            IReadOnlyList<StakingCoin> budget;
+            IReadOnlyList<SegWitCoin> budget;
             Balance balance;
             using (var walletContext = GetWalletContext())
             {
-                budget = walletContext.WalletManager.GetMultiSigBudget(out balance, sourceMultiSigAddress);
+                budget = walletContext.WalletManager.GetBudget(out balance, matchAddress: sourceMultiSigAddress,
+                    matchAddressType: AddressType.MultiSig);
             }
 
             ownPrivateKey = null;
             Script redeemScript = null;
             var scriptCoins = new List<ScriptCoin>();
-            foreach (var stakingCoin in budget)
+            foreach (var segWitCoin in budget)
             {
-                if (redeemScript == null)
-                {
-                    redeemScript = stakingCoin.RedeemScript;
-                    ownPrivateKey = DecryptKeys(new[] { stakingCoin }, passphrase)[0];
-                }
-                else
-                {
-                    if (stakingCoin.RedeemScript != redeemScript)
-                        throw new InvalidOperationException("All redeem scripts must be identical.");
-                }
-                var scriptCoin = stakingCoin.ToScriptCoin(stakingCoin.RedeemScript);
+                var multiSigAddress = (MultiSigAddress)segWitCoin.SegWitAddress;
+                var scriptCoin = segWitCoin.ToCoin().ToScriptCoin(multiSigAddress.GetRedeemScript());
+
                 scriptCoins.Add(scriptCoin);
+                // TODO
             }
 
             if (scriptCoins.Count == 0)
@@ -197,11 +190,11 @@ namespace Obsidian.Features.X1Wallet.Transactions
 
 
 
-        static Key[] DecryptKeys(StakingCoin[] selectedCoins, string passphrase)
+        static Key[] DecryptKeys(SegWitCoin[] selectedCoins, string passphrase)
         {
             var keys = new Key[selectedCoins.Length];
             for (var i = 0; i < keys.Length; i++)
-                keys[i] = new Key(VCL.DecryptWithPassphrase(passphrase, selectedCoins[i].EncryptedPrivateKey));
+                keys[i] = selectedCoins[i].GetPrivateKey(passphrase);
             return keys;
         }
 

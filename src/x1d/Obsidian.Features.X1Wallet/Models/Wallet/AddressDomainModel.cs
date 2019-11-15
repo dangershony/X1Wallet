@@ -1,8 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using NBitcoin;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Obsidian.Features.X1Wallet.Tools;
+using VisualCrypt.VisualCryptLight;
 
 namespace Obsidian.Features.X1Wallet.Models.Wallet
 {
@@ -16,6 +17,8 @@ namespace Obsidian.Features.X1Wallet.Models.Wallet
         AddressType AddressType { get; }
         string ScriptPubKeyHex { get; }
         string Label { get; set; }
+
+        byte[] GetEncryptedPrivateKey();
     }
 
     public interface ISegWitScriptAddress
@@ -30,6 +33,8 @@ namespace Obsidian.Features.X1Wallet.Models.Wallet
     /// </summary>
     public enum AddressType : int
     {
+        MatchAll = -10,
+
         PubKeyHash = 0,
         MultiSig = 10,
         ColdStakingCold = 30,
@@ -79,6 +84,12 @@ namespace Obsidian.Features.X1Wallet.Models.Wallet
 
         public KeyMaterial KeyMaterial;
 
+        public byte[] GetEncryptedPrivateKey()
+        {
+            return this.KeyMaterial.EncryptedPrivateKey;
+        }
+
+       
     }
 
     public sealed class MultiSigAddress : ISegWitAddress, ISegWitScriptAddress
@@ -105,6 +116,16 @@ namespace Obsidian.Features.X1Wallet.Models.Wallet
         /// Value: Nickname of the owner of the public key for display.
         /// </summary>
         public Dictionary<string,string> OtherPublicKeys { get; set; }
+
+        public byte[] GetEncryptedPrivateKey()
+        {
+            return this.OwnKey.EncryptedPrivateKey;
+        }
+
+        public Script GetRedeemScript()
+        {
+            return new Script(this.RedeemScriptHex.FromHexString());
+        }
     }
 
     public class ColdStakingAddress : ISegWitAddress, ISegWitScriptAddress
@@ -123,5 +144,12 @@ namespace Obsidian.Features.X1Wallet.Models.Wallet
         public KeyMaterial ColdKey { get; set; }
 
         public KeyMaterial HotKey { get; set; }
+
+        public byte[] GetEncryptedPrivateKey()
+        {
+            if (this.AddressType == AddressType.ColdStakingCold)
+                return this.ColdKey.EncryptedPrivateKey;
+            return this.HotKey.EncryptedPrivateKey;
+        }
     }
 }
