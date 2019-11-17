@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Obsidian.Features.X1Wallet.Balances;
 using Obsidian.Features.X1Wallet.Models.Api;
 using Obsidian.Features.X1Wallet.Models.Api.Requests;
 using Obsidian.Features.X1Wallet.Models.Wallet;
@@ -100,18 +101,16 @@ namespace Obsidian.Features.X1Wallet.Transactions
 
         IEnumerable<ScriptCoin> GetAllCoinsForMultiSigAccount(string sourceMultiSigAddress, string passphrase, out Script scriptPubKeyForChange, out Key ownPrivateKey)
         {
-            IReadOnlyList<SegWitCoin> budget;
             Balance balance;
             using (var walletContext = GetWalletContext())
             {
-                budget = walletContext.WalletManager.GetBudget(out balance, matchAddress: sourceMultiSigAddress,
-                    matchAddressType: AddressType.MultiSig);
+                balance = walletContext.WalletManager.GetBalance(matchAddress: sourceMultiSigAddress, matchAddressType: AddressType.MultiSig);
             }
 
             ownPrivateKey = null;
             Script redeemScript = null;
             var scriptCoins = new List<ScriptCoin>();
-            foreach (var segWitCoin in budget)
+            foreach (var segWitCoin in balance.SpendableCoins.Values)
             {
                 var multiSigAddress = (MultiSigAddress) segWitCoin.SegWitAddress;
                 var scriptCoin = segWitCoin.ToCoin().ToScriptCoin(multiSigAddress.GetRedeemScript());

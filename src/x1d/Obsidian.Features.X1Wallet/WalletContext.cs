@@ -2,7 +2,7 @@
 
 namespace Obsidian.Features.X1Wallet
 {
-    public sealed class WalletContext : IDisposable
+    sealed  class WalletContext : IDisposable
     {
         public readonly WalletManager WalletManager;
 

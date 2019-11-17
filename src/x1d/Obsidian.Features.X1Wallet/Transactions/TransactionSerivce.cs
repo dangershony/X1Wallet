@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Obsidian.Features.X1Wallet.Balances;
 using Obsidian.Features.X1Wallet.Feature;
 using Obsidian.Features.X1Wallet.Models.Api;
 using Obsidian.Features.X1Wallet.Models.Api.Requests;
@@ -127,30 +128,28 @@ namespace Obsidian.Features.X1Wallet.Transactions
             return response;
         }
 
-
-
         IEnumerable<SegWitCoin> AddCoins(long totalAmountToSend, long fee)
         {
             long totalToSelect = totalAmountToSend + fee;
 
-            IReadOnlyList<SegWitCoin> budget;
             Balance balance;
             using (var walletContext = GetWalletContext())
             {
-                budget = walletContext.WalletManager.GetBudget(out balance);
+                balance = walletContext.WalletManager.GetBalance(null, AddressType.PubKeyHash);
             }
 
             if (balance.Spendable < totalToSelect)
                 throw new X1WalletException(System.Net.HttpStatusCode.BadRequest,
                     $"Required are at least {totalToSelect}, but spendable is only {balance.Spendable}");
 
-            int pointer = 0;
             long selectedAmount = 0;
             while (selectedAmount < totalToSelect)
             {
-                SegWitCoin coin = budget[pointer++];
-                selectedAmount += coin.UtxoValue;
-                yield return coin;
+                foreach (var coin in balance.SpendableCoins.Values)
+                {
+                    selectedAmount += coin.UtxoValue;
+                    yield return coin;
+                }
             }
         }
 

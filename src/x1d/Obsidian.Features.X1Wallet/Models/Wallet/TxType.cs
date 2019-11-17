@@ -23,6 +23,16 @@
         Coinstake = 21,
 
         /// <summary>
+        /// Legacy ColdCoinstake.
+        /// </summary>
+        ColdCoinstakeLegacy = 25,
+
+        /// <summary>
+        /// ColdCoinstake.
+        /// </summary>
+        ColdCoinstake = 26,
+
+        /// <summary>
         /// The transaction spent wallet outputs, no outputs were received. 
         /// </summary>
         Spend = 30,
@@ -40,14 +50,6 @@
 
         SpendWithoutChange = 33,
 
-        /// <summary>
-        /// Legacy ColdCoinstake.
-        /// </summary>
-        ColdCoinstakeLegacy = 40,
-
-        /// <summary>
-        /// ColdCoinstake.
-        /// </summary>
-        ColdCoinstake = 41
+        
     }
 }

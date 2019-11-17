@@ -8,16 +8,16 @@ using VisualCrypt.VisualCryptLight;
 
 namespace Obsidian.Features.X1Wallet.Models.Wallet
 {
-    public class X1WalletFile
+    public sealed class X1WalletFile
     {
+        public const string FileExtension = ".x1wallet.json";
+
         public X1WalletFile()
         {
             this.PubKeyHashAddresses = new Dictionary<string, PubKeyHashAddress>();
             this.MultiSigAddresses = new Dictionary<string, MultiSigAddress>();
             this.ColdStakingAddresses = new Dictionary<string, ColdStakingAddress>();
         }
-
-        public const string FileExtension = ".x1wallet.json";
 
         public int Version { get; set; }
 

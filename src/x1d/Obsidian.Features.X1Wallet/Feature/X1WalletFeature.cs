@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using NBitcoin;
@@ -10,6 +11,8 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Utilities;
+
+[assembly: InternalsVisibleTo("Obsidian.Features.X1Wallet.Tests")]
 
 namespace Obsidian.Features.X1Wallet.Feature
 {
@@ -89,6 +92,7 @@ namespace Obsidian.Features.X1Wallet.Feature
 
         void WriteDaemonInfo(StringBuilder log)
         {
+            return;
             try
             {
                 var daemonInfo = this.walletController.GetDaemonInfo();
@@ -105,6 +109,7 @@ namespace Obsidian.Features.X1Wallet.Feature
 
         void WriteTransactionInfo(StringBuilder log)
         {
+            return;
             var request = new HistoryRequest { Take = 3 };
             var daemonInfo = this.walletController.GetHistoryInfo(request);
             var header = $" Last {request.Take.Value} Transactions ";

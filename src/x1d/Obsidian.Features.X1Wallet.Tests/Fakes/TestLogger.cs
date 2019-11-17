@@ -27,7 +27,7 @@ namespace Obsidian.Features.X1Wallet.Tests.Fakes
 
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
         {
-            this.testOutputHelper.WriteLine($"{logLevel} - {this.categoryName}:");
+            this.testOutputHelper.WriteLine($"{logLevel} - {this.categoryName}: {formatter(state, exception)}");
         }
     }
 }

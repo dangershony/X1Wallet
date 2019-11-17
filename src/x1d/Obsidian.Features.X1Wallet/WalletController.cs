@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Obsidian.Features.X1Wallet.Balances;
 using Obsidian.Features.X1Wallet.Feature;
 using Obsidian.Features.X1Wallet.Models;
 using Obsidian.Features.X1Wallet.Models.Api;
@@ -155,8 +156,7 @@ namespace Obsidian.Features.X1Wallet
         public Balance GetBalance()
         {
             using var context = GetWalletContext();
-            context.WalletManager.GetBudget(out var balance);
-            return balance;
+            return context.WalletManager.GetBalance();
         }
 
         public long EstimateFee(TransactionRequest request)
@@ -173,7 +173,7 @@ namespace Obsidian.Features.X1Wallet
             List<Recipient> recipients;
             using var walletContext = GetWalletContext();
             {
-                walletContext.WalletManager.GetBudget(out Balance _);
+                //var balance = walletContext.WalletManager.GetBalance();
                 recipients = walletContext.WalletManager.GetReceiveAddresses(count,false, request.Passphrase).Select(x => new Recipient { Address = x.Address, Amount = amount }).ToList();
             }
 

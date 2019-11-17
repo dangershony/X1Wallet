@@ -8,38 +8,20 @@ namespace Obsidian.Features.X1Wallet.Models.Wallet
 {
     public sealed class TransactionMetadata : IEquatable<TransactionMetadata>
     {
-        static readonly  Dictionary<string, UtxoMetadata> Empty = new Dictionary<string, UtxoMetadata>(0);
+        public long ValueAdded { get; set; }
 
-        Dictionary<string, UtxoMetadata> received;
-        Dictionary<string, UtxoMetadata> spent;
-        Dictionary<string, UtxoMetadata> destinations;
-
-        public long ValueAdded;
-       
         [JsonConverter(typeof(StringEnumConverter))]
         public TxType TxType { get; set; }
 
         public uint256 HashTx { get; set; }
 
-        public Dictionary<string, UtxoMetadata> Received
-        {
-            get => this.received ?? Empty;
-            set => this.received = value ?? Empty;
-        }
+        public Dictionary<string, UtxoMetadata> Received { get; set; }
 
-        public Dictionary<string, UtxoMetadata> Spent
-        {
-            get => this.spent ?? Empty;
-            set => this.spent = value ?? Empty;
-        }
+        public Dictionary<string, UtxoMetadata> Spent { get; set; }
 
-        public Dictionary<string, UtxoMetadata> Destinations
-        {
-            get => this.destinations ?? Empty;
-            set => this.destinations = value ?? Empty;
-        }
+        public Dictionary<string, UtxoMetadata> Destinations { get; set; }
 
-        #region overrides of Equals, GetHashCode, ==, !=
+        #region overrides of Equals, GetHashCode, ==, != (for use with HashSet<T>)
 
         public override bool Equals(object obj)
         {

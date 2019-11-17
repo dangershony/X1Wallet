@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.Crypto;
+using Obsidian.Features.X1Wallet.Balances;
 using Obsidian.Features.X1Wallet.Models.Wallet;
 using Obsidian.Features.X1Wallet.Tools;
 using Stratis.Bitcoin.Consensus;
@@ -322,13 +324,13 @@ namespace Obsidian.Features.X1Wallet.Staking
             {
                 this.walletManager.WalletSemaphore.Wait();
 
-                var coins = this.walletManager.GetBudget(out var balance, true, matchAddress: null, AddressType.PubKeyHash);
+                Balance balance = this.walletManager.GetBalance(matchAddress: null, AddressType.PubKeyHash);
 
-                this.Status.UnspentOutputs = coins.Length;
+                this.Status.UnspentOutputs = balance.StakingCoins.Count;
                 this.Status.Weight = balance.Stakable;
-                this.Status.Immature = balance.Confirmed - balance.Stakable;
+                this.Status.Immature = balance.Total - balance.Stakable;
 
-                return coins;
+                return balance.StakingCoins.Values.ToArray();
             }
             finally
             {

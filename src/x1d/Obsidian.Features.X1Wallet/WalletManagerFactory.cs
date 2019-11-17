@@ -49,10 +49,11 @@ namespace Obsidian.Features.X1Wallet
             ICoinView coinView, IDateTimeProvider dateTimeProvider)
         {
             C.Network = network;
+            Log.SetLogger(loggerFactory.CreateLogger(nameof(X1Wallet)));
+            this.loggerFactory = loggerFactory;
             this.dataFolder = dataFolder;
             this.chainIndexer = chainIndexer;
             this.broadcasterManager = broadcasterManager;
-            this.loggerFactory = loggerFactory;
             this.nodeLifetime = nodeLifetime;
             this.initialBlockDownloadState = initialBlockDownloadState;
             this.signals = signals;
@@ -74,7 +75,7 @@ namespace Obsidian.Features.X1Wallet
             }
         }
 
-        public WalletContext AutoLoad(string walletName, bool doNotCheck = false)
+        internal WalletContext AutoLoad(string walletName, bool doNotCheck = false)
         {
             if (doNotCheck)
             {

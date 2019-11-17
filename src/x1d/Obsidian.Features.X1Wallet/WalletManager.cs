@@ -9,9 +9,9 @@ using System.Threading;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.DataEncoders;
+using Obsidian.Features.X1Wallet.Balances;
 using Obsidian.Features.X1Wallet.Feature;
 using Obsidian.Features.X1Wallet.Models;
-using Obsidian.Features.X1Wallet.Models.Api;
 using Obsidian.Features.X1Wallet.Models.Api.Requests;
 using Obsidian.Features.X1Wallet.Models.Api.Responses;
 using Obsidian.Features.X1Wallet.Models.Wallet;
@@ -36,9 +36,11 @@ using static Obsidian.Features.X1Wallet.Tools.Extensions;
 
 namespace Obsidian.Features.X1Wallet
 {
-    public class WalletManager : IDisposable
+    sealed class WalletManager : IDisposable
     {
         public readonly SemaphoreSlim WalletSemaphore = new SemaphoreSlim(1, 1);
+
+        readonly object budgetLock = new object();
 
         readonly Network network;
         readonly int coinType;
@@ -140,8 +142,8 @@ namespace Obsidian.Features.X1Wallet
                 info.UnusedAddress = e.Message;
             }
 
-            GetBudget(out var balance);
-            info.Balance = balance;
+           
+            info.Balance = GetBalance();
 
             if (info.MemoryPool.Entries.Count > 0)
                 ;
@@ -595,9 +597,9 @@ namespace Obsidian.Features.X1Wallet
 
         void OnBlockConnected(BlockConnected blockConnected)
         {
-            this.logger.LogInformation($"WalletManager.OnBlockConnected: Block {blockConnected.ConnectedBlock.ChainedHeader.Height} connected.");
+            if (blockConnected?.ConnectedBlock?.ChainedHeader != null)
+                this.logger.LogInformation($"Block {blockConnected.ConnectedBlock.ChainedHeader.Height} connected.");
             SyncWallet();
-
         }
 
         #region import/export keys
@@ -657,18 +659,22 @@ namespace Obsidian.Features.X1Wallet
             return response;
         }
 
-        internal StakingInfo GetStakingInfo()
+        StakingInfo GetStakingInfo()
         {
             if (this.stakingService == null)
                 return new StakingInfo();
 
-            return new StakingInfo
+            var stakingInfo = new StakingInfo
             {
                 Enabled = true,
                 PosV3 = this.stakingService.PosV3,
                 StakingStatus = this.stakingService.Status,
                 LastStakedBlock = this.stakingService.LastStakedBlock,
             };
+
+            if (stakingInfo.LastStakedBlock.Hash == null)
+                stakingInfo.LastStakedBlock = null;
+            return stakingInfo;
         }
 
         internal ExportKeysResponse ExportKeys(ExportKeysRequest exportKeysRequest)
@@ -787,120 +793,10 @@ namespace Obsidian.Features.X1Wallet
                 : this.X1WalletFile.PubKeyHashAddresses.Values.Where(x => x.KeyMaterial.IsChange == isChange).ToArray();
         }
 
-        public SegWitCoin[] GetBudget(out Balance balance, bool forStaking = false, string matchAddress = null, AddressType matchAddressType = AddressType.MatchAll)
+        public Balance GetBalance(string matchAddress = null, AddressType matchAddressType = AddressType.MatchAll)
         {
-
-            var spendableMature = new Dictionary<string, SegWitCoin>();
-            var stakableMature = new Dictionary<string, SegWitCoin>();
-
-            var spent = new Dictionary<string, UtxoMetadata>();
-
-            long totalReceived = 0;
-            long totalSent = 0;
-
-            long spendable = 0;
-            long stakable = 0;
-
-            foreach (var b in this.Metadata.Blocks)
-            {
-                var height = b.Key;
-                var block = b.Value;
-
-                foreach (var tx in block.Transactions)
-                {
-                    bool isImmatureForSpending = false;
-                    bool isImmatureForStaking = false;
-
-                    if (tx.TxType == TxType.Coinbase || tx.TxType == TxType.Coinstake || tx.TxType == TxType.CoinstakeLegacy)
-                    {
-                        var confirmationsSpending = this.Metadata.SyncedHeight - height + 1; // if the tip is at 100 and my tx is height 90, it's 11 confirmations
-                        isImmatureForSpending = confirmationsSpending < this.network.Consensus.CoinbaseMaturity; // ok
-                    }
-
-                    var confirmationsStaking = this.Metadata.SyncedHeight - height + 1; // if the tip is at 100 and my tx is height 90, it's 11 confirmations
-                    isImmatureForStaking = confirmationsStaking < this.network.Consensus.MaxReorgLength; // ok
-
-                    foreach (UtxoMetadata utxo in tx.Received.Values)
-                    {
-                        for (var address = GetOwnAddress(utxo.Address).Match(matchAddress, matchAddressType);
-                            address != null; address = null)
-                        {
-                            totalReceived += utxo.Satoshis;
-
-                            var coin = new SegWitCoin(address, utxo.HashTx, utxo.Index, utxo.Satoshis);
-
-                            if (!isImmatureForSpending)
-                            {
-                                spendable += utxo.Satoshis;
-                                spendableMature.Add(utxo.GetKey(), coin);
-                            }
-                            if (!isImmatureForStaking)
-                            {
-                                stakable += utxo.Satoshis;
-                                stakableMature.Add(utxo.GetKey(), coin);
-                            }
-                        }
-
-                    }
-                    foreach (var s in tx.Spent)
-                    {
-                        totalSent += s.Value.Satoshis;
-                        spent.Add(s.Key, s.Value);
-                    }
-                }
-            }
-
-
-
-            // unconfirmed - add them last, ordered by time, so that they come last in coin selection
-            // when unconfirmed outputs gets spend, to allow the memory pool and network to recognize 
-            // the new unspent outputs
-            long totalUnconfirmedReceived = 0;
-            long totalUnconfirmedSent = 0;
-            foreach (var item in this.Metadata.MemoryPool.Entries.OrderBy(x => x.TransactionTime))
-            {
-                var tx = item.Transaction;
-                foreach (UtxoMetadata utxo in tx.Received.Values)
-                {
-                    ISegWitAddress address = GetOwnAddress(utxo.Address);
-
-                    totalReceived += utxo.Satoshis;
-
-                    var coin = new SegWitCoin(address, utxo.HashTx, utxo.Index, utxo.Satoshis);
-                    spendableMature.Add(utxo.GetKey(), coin);
-                }
-                foreach (var s in tx.Spent)
-                {
-                    totalUnconfirmedSent += s.Value.Satoshis;
-                    spent.Add(s.Key, s.Value);
-                }
-            }
-
-            foreach (var utxoId in spent)
-            {
-                if (spendableMature.ContainsKey(utxoId.Key))
-                {
-                    spendable -= utxoId.Value.Satoshis;
-                    spendableMature.Remove(utxoId.Key);
-                }
-                if (stakableMature.ContainsKey(utxoId.Key))
-                {
-                    stakable -= utxoId.Value.Satoshis;
-                    stakableMature.Remove(utxoId.Key);
-                }
-            }
-
-            balance = new Balance
-            {
-                Confirmed = totalReceived - totalSent,
-                Pending = totalUnconfirmedReceived - totalUnconfirmedSent,
-                Spendable = spendable,
-                Stakable = stakable,
-            };
-
-            if (forStaking)
-                return stakableMature.Values.ToArray();
-            return spendableMature.Values.ToArray();
+            return BalanceService.GetBalance(this.Metadata.Blocks, this.Metadata.SyncedHeight,
+                this.Metadata.MemoryPool.Entries, GetOwnAddress, matchAddress, matchAddressType);
         }
 
         ISegWitAddress GetOwnAddress(string bech32Address)
@@ -912,12 +808,6 @@ namespace Obsidian.Features.X1Wallet
         {
             var transactionCount = 0;
             var historyInfo = new HistoryInfo { Blocks = new List<HistoryInfo.BlockInfo>() };
-
-            // testing
-            int coinstakeCount = 0;
-            int coinbaseCount = 0;
-            int sendCount = 0;
-            // end testing
 
             var unconfirmed = new List<HistoryInfo.TransactionInfo>();
             foreach (var item in this.Metadata.MemoryPool.Entries.OrderByDescending(x => x.TransactionTime))
@@ -957,29 +847,6 @@ namespace Obsidian.Features.X1Wallet
                     if (historyRequest.Take.HasValue)
                         if (transactionCount == historyRequest.Take.Value)
                             return historyInfo;
-
-                    // testing
-                    if (tx.TxType == TxType.Coinstake)
-                    {
-                        coinstakeCount++;
-                        if (coinstakeCount > 3)
-                            continue;
-                    }
-
-                    if (tx.TxType == TxType.Coinbase)
-                    {
-                        coinbaseCount++;
-                        if (coinbaseCount > 3)
-                            continue;
-                    }
-
-                    if (tx.TxType == TxType.Spend)
-                    {
-                        sendCount++;
-                        if (sendCount > 3)
-                            continue;
-                    }
-                    // end testing
 
                     var ti = new HistoryInfo.TransactionInfo { TxType = tx.TxType, HashTx = tx.HashTx.ToString(), ValueAdded = tx.ValueAdded };
                     transactions.Add(ti);
@@ -1081,6 +948,8 @@ namespace Obsidian.Features.X1Wallet
 
                 if (ownAddress != null)
                 {
+                    NotNull(ref received, transaction.Outputs.Count);
+
                     var item = new UtxoMetadata
                     {
                         Address = ownAddress.Address,
