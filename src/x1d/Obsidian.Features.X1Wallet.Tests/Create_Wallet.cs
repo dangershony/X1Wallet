@@ -50,8 +50,8 @@ namespace Obsidian.Features.X1Wallet.Tests
             {
                 var addresses = context.WalletManager.GetPubKeyHashAddresses(C.External, null);
                 var changeAddresses = context.WalletManager.GetPubKeyHashAddresses(C.Change, null);
-                Assert.Equal(C.GapLimit, addresses.Length);
-                Assert.Equal(C.GapLimit, changeAddresses.Length);
+                Assert.Equal(C.GapLimit, addresses.Count);
+                Assert.Equal(C.GapLimit, changeAddresses.Count);
 
                 // the balance of a new wallet must be zero
                 var balance = context.WalletManager.GetBalance();

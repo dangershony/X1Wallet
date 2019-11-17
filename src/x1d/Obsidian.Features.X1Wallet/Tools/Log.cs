@@ -1,5 +1,6 @@
-﻿using System;
+﻿using System.Linq;
 using Microsoft.Extensions.Logging;
+using Obsidian.Features.X1Wallet.Models.Wallet;
 
 namespace Obsidian.Features.X1Wallet.Tools
 {
@@ -13,6 +14,12 @@ namespace Obsidian.Features.X1Wallet.Tools
         public static void SetLogger(ILogger logger)
         {
             Logger = logger;
+        }
+
+        internal static void BlockAddedToWallet(int height, BlockMetadata blockMetadata)
+        {
+            Logger.LogInformation(
+                $"Block {height} added {blockMetadata.Transactions.Count} {blockMetadata.Transactions.Sum(x => x.ValueAdded) / C.SatoshisPerCoin} {C.Network.CoinTicker} to the wallet.");
         }
     }
 }

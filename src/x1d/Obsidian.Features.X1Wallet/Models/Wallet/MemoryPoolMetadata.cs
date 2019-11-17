@@ -21,7 +21,7 @@ namespace Obsidian.Features.X1Wallet.Models.Wallet
 
         public string ConsensusError;
         public string MemoryPoolError;
-        public uint TransactionTime;
+        public long TransactionTime;
 
         #region overrides of Equals, GetHashCode, ==, !=
 

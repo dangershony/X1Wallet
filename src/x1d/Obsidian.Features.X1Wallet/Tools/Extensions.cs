@@ -37,6 +37,12 @@ namespace Obsidian.Features.X1Wallet.Tools
                 list = new Dictionary<K, T>(capacity);
         }
 
+        public static void NotNull<T>(ref HashSet<T> list, int capacity)
+        {
+            if (list == null)
+                list = new HashSet<T>(capacity);
+        }
+
         /// <summary>
         /// Adds the item to the dictionary by overwriting the old value, and logging the occurence of the duplicate key as error. 
         /// </summary>
