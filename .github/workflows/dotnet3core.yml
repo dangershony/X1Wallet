@@ -20,5 +20,5 @@ jobs:
     - name: Build with dotnet
       run: dotnet build "./src/x1d/Obsidian.x1d/Obsidian.x1d.csproj" --configuration Release
     - name: Run Tests
-      run: dotnet test --configuration Release
+      run: dotnet test "./src/x1d/Obsidian.Features.X1Wallet.Tests.csproj" --configuration Release
         
