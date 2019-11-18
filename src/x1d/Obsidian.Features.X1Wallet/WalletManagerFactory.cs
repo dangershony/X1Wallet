@@ -126,8 +126,10 @@ namespace Obsidian.Features.X1Wallet
             x1WalletFile.HdSeed = VCL.EncryptWithPassphrase(walletCreateRequest.Passphrase, hdSeed);
             x1WalletFile.HdSeedHasBip39Passphrase = !string.IsNullOrWhiteSpace(bip39Passphrase);
 
-            x1WalletFile.CreateNewAddresses(C.External, walletCreateRequest.Passphrase, C.GapLimit);
-            x1WalletFile.CreateNewAddresses(C.Change, walletCreateRequest.Passphrase, C.GapLimit);
+            // Create one receive addresses, so that GetUsedReceiveAddresses returns at least one address, even if it is not used in this case.
+            x1WalletFile.CreateAndInsertNewReceiveAddress("Default address", walletCreateRequest.Passphrase);
+
+            x1WalletFile.CreateAndInsertNewChangeAddresses(walletCreateRequest.Passphrase, C.UnusedChangeAddressBuffer);
 
             x1WalletFile.SaveX1WalletFile(filePath);
 

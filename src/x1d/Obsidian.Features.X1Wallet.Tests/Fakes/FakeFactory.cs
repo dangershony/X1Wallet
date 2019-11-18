@@ -104,7 +104,7 @@ namespace Obsidian.Features.X1Wallet.Tests.Fakes
             {
                 using (var context = this.WalletManagerFactory.AutoLoad(walletName))
                 {
-                    if (context.WalletManager.WalletLastBlockSyncedHeight == height)
+                    if (context.WalletManager.SyncedHeight == height)
                         break;
                 }
                 Task.Delay(1000).Wait();
@@ -116,7 +116,7 @@ namespace Obsidian.Features.X1Wallet.Tests.Fakes
         {
             using (var context = this.WalletManagerFactory.AutoLoad(walletName))
             {
-                return context.WalletManager.GetPubKeyHashAddresses(C.External, 1)[0].GetScriptPubKey();
+                return context.WalletManager.GetAllPubKeyHashReceiveAddresses(C.External, 1)[0].GetScriptPubKey();
             }
         }
 

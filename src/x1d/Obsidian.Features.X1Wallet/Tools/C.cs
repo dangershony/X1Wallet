@@ -8,6 +8,7 @@ namespace Obsidian.Features.X1Wallet.Tools
     public static class C
     {
         public static Network Network;
+       
 
         /// <summary>
         /// The wallet key file version the code requires.
@@ -28,6 +29,11 @@ namespace Obsidian.Features.X1Wallet.Tools
         /// Key path for internal addresses. 
         /// </summary>
         public const int Change = 1;
+
+        /// <summary>
+        /// Try to keep a buffer of n unused change addresses.
+        /// </summary>
+        public const int UnusedChangeAddressBuffer = 3;
 
         /// <summary>
         /// How much unused addresses the wallet should ahead.

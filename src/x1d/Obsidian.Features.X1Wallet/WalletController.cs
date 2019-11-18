@@ -26,7 +26,6 @@ using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
-using Stratis.Bitcoin.Utilities.JsonErrors;
 
 namespace Obsidian.Features.X1Wallet
 {
@@ -115,6 +114,17 @@ namespace Obsidian.Features.X1Wallet
             this.walletName = targetWalletName;
         }
 
+        public CreateReceiveAddressResponse CreateReceiveAddress(CreateReceiveAddressRequest createReceiveAddressRequest)
+        {
+            Guard.NotNull(createReceiveAddressRequest, nameof(createReceiveAddressRequest));
+            using var context = GetWalletContext();
+            {
+                PubKeyHashAddress pubKeyHashAddress = context.WalletManager.CreateReceiveAddress(createReceiveAddressRequest.Label,
+                    createReceiveAddressRequest.Passphrase);
+                return new CreateReceiveAddressResponse { PubKeyHashAddress = pubKeyHashAddress };
+            }
+        }
+
         public LoadWalletResponse LoadWallet()
         {
             using var context = GetWalletContext();
@@ -168,13 +178,14 @@ namespace Obsidian.Features.X1Wallet
 
         public TransactionResponse BuildSplitTransaction(TransactionRequest request)
         {
-            var count = 250;
-            var amount = Money.Coins(200_000);
             List<Recipient> recipients;
             using var walletContext = GetWalletContext();
             {
-                //var balance = walletContext.WalletManager.GetBalance();
-                recipients = walletContext.WalletManager.GetReceiveAddresses(count,false, request.Passphrase).Select(x => new Recipient { Address = x.Address, Amount = amount }).ToList();
+                var balance = walletContext.WalletManager.GetBalance();
+                var addresses = walletContext.WalletManager.GetAllPubKeyHashReceiveAddresses(0, null);
+                var each = (balance.Spendable - 5 * C.SatoshisPerCoin) / addresses.Length;
+               
+                recipients = addresses.Select(x => new Recipient { Address = x.Address, Amount = each }).ToList();
             }
 
             TransactionResponse response = GetTransactionService().BuildTransaction(recipients, request.Sign, request.Passphrase);
@@ -221,8 +232,8 @@ namespace Obsidian.Features.X1Wallet
 
             ColdStakingTransactionResponse response = GetColdStakingTransactionService().BuildTransaction(null, request.Recipients, request.Sign, request.Passphrase, request.Burns);
 
-            response.BroadcastState = request.Send 
-                ? BroadCast(response.Transaction) 
+            response.BroadcastState = request.Send
+                ? BroadCast(response.Transaction)
                 : BroadcastState.NotRequested;
 
             return response;
@@ -271,7 +282,7 @@ namespace Obsidian.Features.X1Wallet
             try
             {
                 using var context = GetWalletContext();
-                return context.WalletManager.WalletLastBlockSyncedHash == this.chainIndexer.Tip.HashBlock &&
+                return context.WalletManager.SyncedHash == this.chainIndexer.Tip.HashBlock &&
                        this.chainIndexer.Tip?.Height > 0;
             }
             catch (Exception e)
@@ -281,40 +292,39 @@ namespace Obsidian.Features.X1Wallet
             }
         }
 
-        public GetAddressesResponse GetUnusedReceiveAddresses()
+        public GetAddressesResponse GetUsedReceiveAddresses(GetAddressesRequest getAddressesRequest)
         {
             using (var context = GetWalletContext())
             {
-                PubKeyHashAddress receiveAddress = context.WalletManager.GetUnusedReceiveAddress();
+                var addresses =
+                    context.WalletManager.GetAllPubKeyHashReceiveAddresses(getAddressesRequest.Skip, getAddressesRequest.Take);
 
-                var model = new GetAddressesResponse { Addresses = new List<AddressModel>() };
-                model.Addresses.Add(new AddressModel { Address = receiveAddress.Address, IsUsed = false, FullAddress = receiveAddress });
-                return model;
+                return new GetAddressesResponse { PubKeyHashAddresses = addresses };
             }
         }
 
-        public AddressModel EnsureDummyMultiSig1Of2Address()
-        {
-            string multiSigAddress = null;
-            using (var context = GetWalletContext())
-            {
-                multiSigAddress = context.WalletManager.EnsureDummyMultiSig1Of2Address();
-            }
+        //public AddressModel EnsureDummyMultiSig1Of2Address()
+        //{
+        //    string multiSigAddress = null;
+        //    using (var context = GetWalletContext())
+        //    {
+        //        multiSigAddress = context.WalletManager.EnsureDummyMultiSig1Of2Address();
+        //    }
 
-            //var recipients = new List<Recipient>();
-            //var recipient = new Recipient { Address = multiSigAddress, Amount = 3 * Satoshi.Long };
-            //recipients.Add(recipient);
-            //this.BuildTransaction(new TransactionRequest
-            //{ Recipients = recipients, Passphrase = "passwordpassword", Sign = true, Send = true, IsMultiSig = true });
-            //this.logger.LogInformation($"Sent {recipient.Amount} to {recipient.Address}");
-            return null;
-        }
+        //    //var recipients = new List<Recipient>();
+        //    //var recipient = new Recipient { Address = multiSigAddress, Amount = 3 * Satoshi.Long };
+        //    //recipients.Add(recipient);
+        //    //this.BuildTransaction(new TransactionRequest
+        //    //{ Recipients = recipients, Passphrase = "passwordpassword", Sign = true, Send = true, IsMultiSig = true });
+        //    //this.logger.LogInformation($"Sent {recipient.Amount} to {recipient.Address}");
+        //    return null;
+        //}
 
-        public void Repair(RepairRequest date)
+        public void Repair(RepairRequest repairRequest)
         {
             var chainedHeader = this.chainIndexer.GetHeader(1);
             using var context = GetWalletContext();
-            context.WalletManager.RemoveBlocks(chainedHeader);
+            context.WalletManager.RepairWallet(repairRequest);
         }
 
         public DaemonInfo GetDaemonInfo()

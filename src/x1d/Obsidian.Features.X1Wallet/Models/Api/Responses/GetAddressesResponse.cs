@@ -1,9 +1,16 @@
 ﻿using System.Collections.Generic;
+using Obsidian.Features.X1Wallet.Models.Wallet;
 
 namespace Obsidian.Features.X1Wallet.Models.Api.Responses
 {
-    public class GetAddressesResponse
+    public sealed class GetAddressesResponse
     {
-        public List<AddressModel> Addresses { get; set; }
+        public PubKeyHashAddress[] PubKeyHashAddresses { get; set; }
+    }
+
+    public sealed class GetAddressesRequest
+    {
+        public int Skip { get; set; }
+        public int? Take { get; set; }
     }
 }

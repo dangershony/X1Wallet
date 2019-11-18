@@ -89,7 +89,8 @@ namespace Obsidian.Features.X1Wallet.Transactions
         {
             using (var context = GetWalletContext())
             {
-                return context.WalletManager.EnsureColdStakingAddress(passphrase);
+                //return context.WalletManager.EnsureColdStakingAddress(passphrase);
+                return null;
             }
         }
 

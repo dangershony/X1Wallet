@@ -48,7 +48,7 @@ namespace Obsidian.Features.X1Wallet.Models
         public Balance Balance;
         public MemoryPoolMetadata MemoryPool;
         public int Adresses;
-        public string UnusedAddress;
+        public string DefaultReceiveAddress;
         public StakingInfo StakingInfo;
         public string PassphraseChallenge;
         internal int MultiSigAddresses;

@@ -48,10 +48,11 @@ namespace Obsidian.Features.X1Wallet.Tests
             // load the created wallet from file, and check if the addresses have been created,
             using (var context = this.factory.WalletManagerFactory.AutoLoad(walletName))
             {
-                var addresses = context.WalletManager.GetPubKeyHashAddresses(C.External, null);
-                var changeAddresses = context.WalletManager.GetPubKeyHashAddresses(C.Change, null);
-                Assert.Equal(C.GapLimit, addresses.Count);
-                Assert.Equal(C.GapLimit, changeAddresses.Count);
+                var receiveAddresses = context.WalletManager.GetAllPubKeyHashReceiveAddresses(skip: 0, null);
+                Assert.Equal(1, receiveAddresses.Length); // one address should have been created
+
+                var changeAddress = context.WalletManager.GetUnusedChangeAddress(null, false);
+                Assert.NotNull(changeAddress); // we should get an unused change address without supplying a password
 
                 // the balance of a new wallet must be zero
                 var balance = context.WalletManager.GetBalance();

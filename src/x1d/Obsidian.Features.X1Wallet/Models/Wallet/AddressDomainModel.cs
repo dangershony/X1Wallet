@@ -77,7 +77,7 @@ namespace Obsidian.Features.X1Wallet.Models.Wallet
         public string Label { get; set; }
 
         /// <summary>
-        /// This property must only be set while processing transactions from the blockchain.
+        /// This property must only be SET while processing transactions from the blockchain.
         /// The presence of a valid date indicates that the address is a used address.
         /// </summary>
         public long? FirstSeenUtc { get; set; }

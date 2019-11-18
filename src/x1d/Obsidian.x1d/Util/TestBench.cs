@@ -198,8 +198,8 @@ namespace Obsidian.x1d.Util
 
             //}
             // await Task.Delay(10000);
-            var model = Controller.GetUnusedReceiveAddresses();
-            var address = model.Addresses[0].Address;
+            var model = Controller.GetUsedReceiveAddresses(new Features.X1Wallet.Models.Api.Responses.GetAddressesRequest{Skip=0, Take = 1});
+            var address = model.PubKeyHashAddresses[0].Address;
 
             var script = new ReserveScript { ReserveFullNodeScript = address.GetScriptPubKey() };
             _ = Task.Run(() =>
