@@ -28,6 +28,9 @@ namespace Obsidian.Features.X1Wallet.Tests.Fakes
         public WalletManagerFactory WalletManagerFactory;
 
         public readonly Network Network;
+
+        public readonly NodeServices NodeServices;
+
         public readonly TestInitialBlockDownloadState InitialBlockDownloadState;
         public readonly ChainIndexer ChainIndexer;
         public readonly ISignals Signals;
@@ -62,7 +65,11 @@ namespace Obsidian.Features.X1Wallet.Tests.Fakes
             this.NodeLifetime = new NodeLifetime();
             this.BlockStore = new TestBlockStore();
 
-            this.WalletManagerFactory = this.CreateWalletManagerFactory();
+            this.NodeServices = new NodeServices(dataFolder: this.DataFolder, chainIndexer: this.ChainIndexer, network: this.Network,
+                broadcasterManager: new TestBroadcastManager(), this.loggerFactory, nodeLifetime: this.NodeLifetime, signals: this.Signals, blockStore: this.BlockStore,
+                timeSyncBehaviorState: null, initialBlockDownloadState: this.InitialBlockDownloadState,
+                blockProvider: null, consensusManager: null, stakeChain: null, coinView: null, dateTimeProvider: null, chainState: null);
+            this.WalletManagerFactory = new WalletManagerFactory(this.NodeServices);
         }
 
         public void DisposeAndRecreateWalletManagerFactory()
@@ -115,11 +122,7 @@ namespace Obsidian.Features.X1Wallet.Tests.Fakes
 
         WalletManagerFactory CreateWalletManagerFactory()
         {
-            var factory = new WalletManagerFactory(dataFolder: this.DataFolder, chainIndexer: this.ChainIndexer, network: this.Network,
-                broadcasterManager: null, this.loggerFactory, nodeLifetime: this.NodeLifetime, signals: this.Signals, blockStore: this.BlockStore,
-                timeSyncBehaviorState: null, initialBlockDownloadState: this.InitialBlockDownloadState,
-                blockProvider: null, consensusManager: null, stakeChain: null, coinView: null, dateTimeProvider: null);
-            return factory;
+            return new WalletManagerFactory(this.NodeServices);
         }
 
         public void AddBlockToBlockStore(Block block)

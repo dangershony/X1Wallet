@@ -38,6 +38,7 @@ namespace Obsidian.Features.X1Wallet.Feature
                     .DependOn<BlockStoreFeature>()
                     .FeatureServices(services =>
                     {
+                        services.AddSingleton<NodeServices>();
                         services.AddSingleton<WalletManagerFactory>();
                         services.AddSingleton<BlockDefinition, PowBlockDefinition>();
                         services.AddSingleton<BlockDefinition, PosBlockDefinition>();

@@ -1,71 +1,25 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
-using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Obsidian.Features.X1Wallet.Models.Api.Requests;
 using Obsidian.Features.X1Wallet.Models.Wallet;
 using Obsidian.Features.X1Wallet.Tools;
-using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.Consensus.CoinViews;
-using Stratis.Bitcoin.Features.Wallet.Interfaces;
-using Stratis.Bitcoin.Interfaces;
-using Stratis.Bitcoin.Mining;
-using Stratis.Bitcoin.Signals;
-using Stratis.Bitcoin.Utilities;
 using VisualCrypt.VisualCryptLight;
 
 namespace Obsidian.Features.X1Wallet
 {
     public sealed class WalletManagerFactory : IDisposable
     {
-        readonly IBlockProvider blockProvider;
-        readonly IBlockStore blockStore;
-        readonly IBroadcasterManager broadcasterManager;
-        readonly ChainIndexer chainIndexer;
-        readonly ICoinView coinView;
-        readonly IConsensusManager consensusManager;
-        readonly DataFolder dataFolder;
-        readonly IDateTimeProvider dateTimeProvider;
-        readonly IInitialBlockDownloadState initialBlockDownloadState;
+        readonly NodeServices nodeServices;
         readonly object lockObject = new object();
-        readonly ILoggerFactory loggerFactory;
-        readonly INodeLifetime nodeLifetime;
-        readonly ISignals signals;
-        readonly IStakeChain stakeChain;
-        readonly ITimeSyncBehaviorState timeSyncBehaviorState;
-
 
         WalletManager walletManager;
 
-        public WalletManagerFactory(DataFolder dataFolder, ChainIndexer chainIndexer, Network network,
-            IBroadcasterManager broadcasterManager, ILoggerFactory loggerFactory,
-            INodeLifetime nodeLifetime, ISignals signals, IBlockStore blockStore,
-            ITimeSyncBehaviorState timeSyncBehaviorState, IInitialBlockDownloadState initialBlockDownloadState,
-            IBlockProvider blockProvider, IConsensusManager consensusManager, IStakeChain stakeChain,
-            ICoinView coinView, IDateTimeProvider dateTimeProvider)
+        public WalletManagerFactory(NodeServices nodeServices)
         {
-            C.Network = network;
-            Log.SetLogger(loggerFactory.CreateLogger(nameof(X1Wallet)));
-            this.loggerFactory = loggerFactory;
-            this.dataFolder = dataFolder;
-            this.chainIndexer = chainIndexer;
-            this.broadcasterManager = broadcasterManager;
-            this.nodeLifetime = nodeLifetime;
-            this.initialBlockDownloadState = initialBlockDownloadState;
-            this.signals = signals;
-            this.blockStore = blockStore;
-            this.timeSyncBehaviorState = timeSyncBehaviorState;
-            this.blockProvider = blockProvider;
-            this.consensusManager = consensusManager;
-            this.stakeChain = stakeChain;
-            this.dateTimeProvider = dateTimeProvider;
-            this.coinView = coinView;
+            this.nodeServices = nodeServices;
         }
-
 
         public void Dispose()
         {
@@ -117,29 +71,25 @@ namespace Obsidian.Features.X1Wallet
 
         void LoadWalletFromFile(string walletName)
         {
-            string x1WalletFilePath = walletName.GetX1WalletFilepath(C.Network, this.dataFolder);
+            string x1WalletFilePath = walletName.GetX1WalletFilepath(C.Network, this.nodeServices.DataFolder);
 
             if (!File.Exists(x1WalletFilePath))
                 throw new FileNotFoundException($"No wallet file found at {x1WalletFilePath}");
 
             if (this.walletManager != null)
             {
-                if (this.walletManager.CurrentX1WalletFilePath != x1WalletFilePath)
+                if (this.walletManager.WalletPath != x1WalletFilePath)
                     throw new NotSupportedException(
                         "Core wallet manager already created, changing the wallet file while node and wallet are running is not currently supported.");
             }
 
-            this.walletManager = new WalletManager(x1WalletFilePath, this.chainIndexer, C.Network, this.dataFolder,
-                this.broadcasterManager, this.loggerFactory,
-                this.nodeLifetime, this.timeSyncBehaviorState, this.signals, this.initialBlockDownloadState,
-                this.blockStore, this.blockProvider, this.consensusManager, this.stakeChain, this.coinView,
-                this.dateTimeProvider);
+            this.walletManager = new WalletManager(this.nodeServices, x1WalletFilePath);
         }
 
         public void CreateWallet(WalletCreateRequest walletCreateRequest)
         {
             string walletName = walletCreateRequest.WalletName;
-            string filePath = walletName.GetX1WalletFilepath(C.Network, this.dataFolder);
+            string filePath = walletName.GetX1WalletFilepath(C.Network, this.nodeServices.DataFolder);
 
             if (File.Exists(filePath))
                 throw new InvalidOperationException(
@@ -183,7 +133,7 @@ namespace Obsidian.Features.X1Wallet
 
             X1WalletMetadataFile x1WalletMetadataFile =
                 x1WalletFile.CreateX1WalletMetadataFile(C.Network.GenesisHash);
-            string x1WalletMetadataFilename = walletName.GetX1WalletMetaDataFilepath(C.Network, this.dataFolder);
+            string x1WalletMetadataFilename = walletName.GetX1WalletMetaDataFilepath(C.Network, this.nodeServices.DataFolder);
             x1WalletMetadataFile.SaveX1WalletMetadataFile(x1WalletMetadataFilename);
         }
     }
