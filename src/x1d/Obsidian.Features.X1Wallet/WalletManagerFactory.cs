@@ -30,6 +30,49 @@ namespace Obsidian.Features.X1Wallet
             }
         }
 
+        internal WalletManager AutoLoad2(string walletName, bool doNotCheck = false)
+        {
+
+            if (doNotCheck)
+            {
+                if (this.walletManager == null)
+                {
+                    return null;
+                }
+
+                return this.walletManager;
+            }
+
+            if (walletName == null) 
+                throw new ArgumentNullException(nameof(walletName));
+
+            if (this.walletManager != null)
+            {
+                if (this.walletManager.WalletName == walletName)
+                    return this.walletManager;
+
+                throw new InvalidOperationException(
+                    $"Invalid request for wallet {walletName} - the current wallet is {this.walletManager.WalletName}");
+            }
+
+            lock (this.lockObject)
+            {
+                if (this.walletManager == null)
+                {
+                    LoadWalletFromFile(walletName);
+                    Debug.Assert(this.walletManager != null,
+                        "The WalletSyncManager cannot be correctly initialized when the WalletManager is null");
+                }
+                else
+                {
+                    throw new InvalidOperationException(
+                        $"Invalid request for wallet {walletName} - the current wallet is {this.walletManager.WalletName}");
+                }
+            }
+
+            return this.walletManager;
+        }
+
         internal WalletContext AutoLoad(string walletName, bool doNotCheck = false)
         {
             if (doNotCheck)
@@ -132,6 +175,8 @@ namespace Obsidian.Features.X1Wallet
             AddressService.CreateAndInsertNewReceiveAddress("Default address", walletCreateRequest.Passphrase, x1WalletFile);
 
             AddressService.CreateAndInsertNewChangeAddresses(walletCreateRequest.Passphrase, C.UnusedChangeAddressBuffer, x1WalletFile);
+
+            AddressService.TryUpdateLookAhead(walletCreateRequest.Passphrase, x1WalletFile);
 
             x1WalletFile.SaveX1WalletFile(filePath);
 

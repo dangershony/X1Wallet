@@ -10,22 +10,22 @@ namespace Obsidian.Features.X1Wallet.Blockchain
 {
     static class BlockService
     {
-        public static BlockMetadata AnalyzeBlock(Block block, IReadOnlyCollection<BlockMetadata> blockReader, Func<string, ISegWitAddress> addressReader)
+        public static BlockMetadata AnalyzeBlock(Block block, int blockHeight, ICollection<BlockMetadata> blockReader, Func<string,int, ISegWitAddress> addressReader)
         {
-            var transactions = FindTransactions(block.Transactions, blockReader, addressReader);
+            var transactions = FindTransactions(block.Transactions, blockHeight, blockReader, addressReader);
 
             return transactions == null
                 ? null
                 : new BlockMetadata { HashBlock = block.GetHash(), Time = block.Header.Time, Transactions = transactions };
         }
 
-        static HashSet<TransactionMetadata> FindTransactions(IEnumerable<Transaction> transactions, IReadOnlyCollection<BlockMetadata> blockReader, Func<string, ISegWitAddress> addressReader)
+        static HashSet<TransactionMetadata> FindTransactions(IEnumerable<Transaction> transactions, int blockHeight, ICollection<BlockMetadata> blockReader, Func<string,int, ISegWitAddress> addressReader)
         {
             HashSet<TransactionMetadata> found = null;
 
             foreach (Transaction transaction in transactions)
             {
-                var foundTransaction = AnalyzeTransaction(transaction, blockReader, addressReader);
+                var foundTransaction = AnalyzeTransaction(transaction, blockHeight, blockReader, addressReader);
                 if(foundTransaction == null)
                     continue;
 
@@ -37,10 +37,10 @@ namespace Obsidian.Features.X1Wallet.Blockchain
             return found;
         }
 
-        public static TransactionMetadata AnalyzeTransaction(Transaction transaction, IReadOnlyCollection<BlockMetadata> blockReader, Func<string, ISegWitAddress> addressReader)
+        public static TransactionMetadata AnalyzeTransaction(Transaction transaction, int blockHeight, ICollection<BlockMetadata> blockReader, Func<string,int, ISegWitAddress> addressReader)
         {
             var spent = ExtractOutgoingFunds(transaction, blockReader, out var amountSpent);
-            var received = ExtractIncomingFunds(transaction, spent != null, addressReader, out var amountReceived, out var destinations);
+            var received = ExtractIncomingFunds(transaction, blockHeight, spent != null, addressReader, out var amountReceived, out var destinations);
 
             if (received == null && spent == null)
                 return null;
@@ -108,7 +108,7 @@ namespace Obsidian.Features.X1Wallet.Blockchain
             return spends; // might be null or contain less then the tx inputs in edge cases, e.g. if an private key was removed from the wallet and no more items than the tx inputs.
         }
 
-        static Dictionary<string, UtxoMetadata> ExtractIncomingFunds(Transaction transaction, bool didSpend, Func<string, ISegWitAddress> addressReader, out long amountReceived, out Dictionary<string, UtxoMetadata> destinations)
+        static Dictionary<string, UtxoMetadata> ExtractIncomingFunds(Transaction transaction, int blockHeight, bool didSpend, Func<string, int, ISegWitAddress> addressReader, out long amountReceived, out Dictionary<string, UtxoMetadata> destinations)
         {
             Dictionary<string, UtxoMetadata> received = null;
             Dictionary<string, UtxoMetadata> notInWallet = null;
@@ -120,7 +120,7 @@ namespace Obsidian.Features.X1Wallet.Blockchain
                 ISegWitAddress ownAddress = null;
 
                 if (!output.IsProtocolOutput(transaction))
-                    ownAddress = addressReader(output.ScriptPubKey.GetAddressFromScriptPubKey());
+                    ownAddress = addressReader(output.ScriptPubKey.GetAddressFromScriptPubKey(), blockHeight);
 
                 if (ownAddress != null)
                 {

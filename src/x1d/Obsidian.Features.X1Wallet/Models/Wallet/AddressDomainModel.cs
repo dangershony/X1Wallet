@@ -19,6 +19,8 @@ namespace Obsidian.Features.X1Wallet.Models.Wallet
         string Label { get; set; }
 
         byte[] GetEncryptedPrivateKey();
+
+        int? LastSeenHeight { get; set; }
     }
 
     public interface ISegWitScriptAddress
@@ -78,9 +80,9 @@ namespace Obsidian.Features.X1Wallet.Models.Wallet
 
         /// <summary>
         /// This property must only be SET while processing transactions from the blockchain.
-        /// The presence of a valid date indicates that the address is a used address.
+        /// The presence of a valid value indicates that the address is a used address.
         /// </summary>
-        public long? FirstSeenUtc { get; set; }
+        public int? LastSeenHeight { get; set; }
 
         public KeyMaterial KeyMaterial;
 
@@ -104,6 +106,8 @@ namespace Obsidian.Features.X1Wallet.Models.Wallet
         public string Label { get; set; }
 
         public string RedeemScriptHex { get; set; }
+
+        public int? LastSeenHeight { get; set; }
 
         public KeyMaterial OwnKey { get; set; }
 
@@ -140,6 +144,8 @@ namespace Obsidian.Features.X1Wallet.Models.Wallet
         public string Label { get; set; }
 
         public string RedeemScriptHex { get; set; }
+
+        public int? LastSeenHeight { get; set; }
 
         public KeyMaterial ColdKey { get; set; }
 

@@ -192,26 +192,18 @@ namespace Obsidian.Features.X1Wallet
 
         public TransactionResponse BuildSplitTransaction(TransactionRequest request)
         {
-            List<Recipient> recipients;
-            using var walletContext = GetWalletContext();
-            {
-                var balance = walletContext.WalletManager.GetBalance();
-                var addresses = walletContext.WalletManager.GetAllPubKeyHashReceiveAddresses(0, null);
-                var each = (balance.Spendable - 5 * C.SatoshisPerCoin) / addresses.Length;
-               
-                recipients = addresses.Select(x => new Recipient { Address = x.Address, Amount = each }).ToList();
-            }
+            var wm = this.walletManagerFactory.AutoLoad2(this.walletName);
 
-            TransactionResponse response = GetTransactionService().BuildTransaction(recipients, request.Sign, request.Passphrase);
-            if (request.Send)
-            {
-                this.broadcasterManager.BroadcastTransactionAsync(response.Transaction).GetAwaiter().GetResult();
-            }
-            else
-            {
-                response.BroadcastState = BroadcastState.NotRequested;
-            }
-            return response;
+            var balance = wm.GetBalance();
+            var addresses = wm.GetAllPubKeyHashReceiveAddresses(0, 125);
+            var each = (balance.Spendable - (10000 * C.SatoshisPerCoin)) / addresses.Length;
+            var eachInCoinUnits = each / C.SatoshisPerCoin;
+            request.Recipients = addresses.Select(x => new Recipient { Address = x.Address, Amount = each }).ToList();
+
+            
+            
+            return BuildTransaction(request);
+            
         }
 
         public TransactionResponse BuildTransaction(TransactionRequest request)

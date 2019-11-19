@@ -62,7 +62,8 @@ namespace Obsidian.x1d.Util
                     //await Task.Delay(1000);
                 }
 
-                await TryStakingAsync();
+                //await SplitAsync();
+              await TryStakingAsync();
             }
             catch (Exception e)
             {

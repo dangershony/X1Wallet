@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -71,30 +72,19 @@ namespace Obsidian.Features.X1Wallet.Addresses
         /// </summary>
         public static List<PubKeyHashAddress> CreateAndInsertNewChangeAddresses(string passphrase, int addressesToCreate, X1WalletFile x1WalletFile)
         {
-            var seed = VCL.DecryptWithPassphrase(passphrase, x1WalletFile.HdSeed);
+            var decryptedSeed = VCL.DecryptWithPassphrase(passphrase, x1WalletFile.HdSeed);
 
-            var nextIndex = GetNextIndex(C.Change, x1WalletFile);
+            var nextIndex = GetNextIndex(C.Change, x1WalletFile, out var _);
 
             var created = 0;
             var newAddresses = new List<PubKeyHashAddress>(addressesToCreate);
 
             while (created < addressesToCreate)
             {
-                var keyMaterial = KeyHelper.CreateHdKeyMaterial(seed, passphrase, x1WalletFile.CoinType, AddressType.PubKeyHash, C.Change,
-                    nextIndex);
-                var privateKey = keyMaterial.GetKey(passphrase);
-                var scriptPubKey = privateKey.PubKey.Compress().WitHash.ScriptPubKey;
-                var address = new PubKeyHashAddress
-                {
-                    KeyMaterial = keyMaterial,
-                    AddressType = AddressType.PubKeyHash,
-                    Label = null,
-                    ScriptPubKeyHex = scriptPubKey.ToHex()
-                };
-                address.Address = scriptPubKey.GetAddressFromScriptPubKey();
-                Debug.Assert(address.Address.Length == C.PubKeyHashAddressLength);
+                var address = GeneratePubKeyHashAddress(decryptedSeed, passphrase, x1WalletFile.CoinType, C.Change, nextIndex);
                 newAddresses.Add(address);
-                x1WalletFile.PubKeyHashAddresses.Add(address.Address, address);
+                if (!x1WalletFile.PubKeyHashAddresses.TryAdd(address.Address, address))
+                    Log.Logger.LogWarning($"Change address {address.Address} already existed - nothing was added.");
                 created++;
                 nextIndex++;
             }
@@ -111,26 +101,37 @@ namespace Obsidian.Features.X1Wallet.Addresses
             if (!IsLabelUnique(label, x1WalletFile))
                 throw new X1WalletException($"The label '{label}' is already in use");
 
-            var nextIndex = GetNextIndex(C.External, x1WalletFile);
+            var nextIndex = GetNextIndex(C.External, x1WalletFile, out var _);
 
-            var seed = VCL.DecryptWithPassphrase(passphrase, x1WalletFile.HdSeed);
-            var keyMaterial = KeyHelper.CreateHdKeyMaterial(seed, passphrase, x1WalletFile.CoinType, AddressType.PubKeyHash, C.External, nextIndex);
+            var decryptedSeed = VCL.DecryptWithPassphrase(passphrase, x1WalletFile.HdSeed);
+            var address = GeneratePubKeyHashAddress(decryptedSeed, passphrase, x1WalletFile.CoinType, C.External, nextIndex);
+           
+            if (!x1WalletFile.PubKeyHashAddresses.TryAdd(address.Address, address))
+            {
+                throw new X1WalletException(HttpStatusCode.InternalServerError, $"Receive address {address.Address} already exists.");
+            }
+
+            x1WalletFile.SaveX1WalletFile(x1WalletFile.CurrentPath);
+            return address;
+        }
+
+        static PubKeyHashAddress GeneratePubKeyHashAddress(byte[] decryptedSeed, string passphrase, int coinType, int isChange, int index)
+        {
+            var keyMaterial = KeyHelper.CreateHdKeyMaterial(decryptedSeed, passphrase, coinType, AddressType.PubKeyHash, isChange, index);
             var privateKey = keyMaterial.GetKey(passphrase);
             var scriptPubKey = privateKey.PubKey.Compress().WitHash.ScriptPubKey;
             var address = new PubKeyHashAddress
             {
                 KeyMaterial = keyMaterial,
                 AddressType = AddressType.PubKeyHash,
-                Label = label,
+                Label = null,
                 ScriptPubKeyHex = scriptPubKey.ToHex()
             };
             address.Address = scriptPubKey.GetAddressFromScriptPubKey();
             Debug.Assert(address.Address.Length == C.PubKeyHashAddressLength);
-            x1WalletFile.PubKeyHashAddresses.Add(address.Address, address); // throws if the address, and by extension, the index, already exists.
-
-            x1WalletFile.SaveX1WalletFile(x1WalletFile.CurrentPath);
             return address;
         }
+
 
         public static bool IsLabelUnique(string label, X1WalletFile x1WalletFile)
         {
@@ -147,12 +148,9 @@ namespace Obsidian.Features.X1Wallet.Addresses
             return true;
         }
 
-        static int GetNextIndex(int isChange, X1WalletFile x1WalletFile)
+        static int GetNextIndex(int isChange, X1WalletFile x1WalletFile, out int[] indexesInUse)
         {
-            int[] indexesInUse = x1WalletFile.PubKeyHashAddresses.Values.Where(x =>
-                x.KeyMaterial.KeyType == KeyType.Hd &&
-                x.KeyMaterial.IsChange == isChange &&
-                x.KeyMaterial.AddressIndex.HasValue).Select(x => x.KeyMaterial.AddressIndex.Value).ToArray();
+            indexesInUse = GetIndexesInUse(isChange, x1WalletFile).ToArray();
             var count = indexesInUse.Length;
 
             var max = 0;
@@ -166,6 +164,78 @@ namespace Obsidian.Features.X1Wallet.Addresses
                     $"For addresses oy type {isChange}, the count of {count} does not equal max of {max}. Using index {next} for the next address to be created.");
             return next;
 
+        }
+
+        static List<int> GetIndexGaps(int isChange, X1WalletFile x1WalletFile)
+        {
+            List<int> numbers = new List<int>();
+            var nextIndex = GetNextIndex(isChange, x1WalletFile, out int[] indexesInUse);
+            for (var i = 0; i < nextIndex + C.GapLimit; i++)
+                numbers.Add(i);
+            for (var k = 0; k < indexesInUse.Length; k++)
+                numbers.Remove(indexesInUse[k]);
+            return numbers;
+        }
+
+        static IEnumerable<int> GetIndexesInUse(int isChange, X1WalletFile x1WalletFile)
+        {
+            return x1WalletFile.PubKeyHashAddresses.Values.Where(x =>
+                x.KeyMaterial.KeyType == KeyType.Hd &&
+                x.KeyMaterial.IsChange == isChange &&
+                x.KeyMaterial.AddressIndex.HasValue).Select(x => x.KeyMaterial.AddressIndex.Value);
+        }
+
+
+        public static void TryUpdateLookAhead(string passphrase, X1WalletFile x1WalletFile)
+        {
+            if (string.IsNullOrWhiteSpace(passphrase))
+                return;
+
+            x1WalletFile.LookAhead.Clear();
+
+            var decryptedSeed = VCL.DecryptWithPassphrase(passphrase, x1WalletFile.HdSeed);
+            var changeAddressGaps = GetIndexGaps(C.Change, x1WalletFile);
+            foreach (var index in changeAddressGaps)
+            {
+                var generated = GeneratePubKeyHashAddress(decryptedSeed, passphrase, x1WalletFile.CoinType, C.Change, index);
+                x1WalletFile.LookAhead[generated.Address] = generated;
+            }
+
+            var receiveAddressGaps = GetIndexGaps(C.External, x1WalletFile);
+            foreach (var index in receiveAddressGaps)
+            {
+                var generated = GeneratePubKeyHashAddress(decryptedSeed, passphrase, x1WalletFile.CoinType, C.Change, index);
+                x1WalletFile.LookAhead[generated.Address] = generated;
+            }
+
+            x1WalletFile.SaveX1WalletFile(x1WalletFile.CurrentPath);
+        }
+
+        public static ISegWitAddress GetOrAddAddress(string bech32, int blockHeight, X1WalletFile x1WalletFile)
+        {
+            ISegWitAddress existing = null;
+            if (x1WalletFile.PubKeyHashAddresses.TryGetValue(bech32, out var pubKeyHashAddress))
+                existing = pubKeyHashAddress;
+            else if (x1WalletFile.ColdStakingAddresses.TryGetValue(bech32, out var coldStakingAddress))
+                existing = coldStakingAddress;
+            else if (x1WalletFile.MultiSigAddresses.TryGetValue(bech32, out var multiSigAddress))
+                existing = multiSigAddress;
+            if (existing != null)
+            {
+                existing.LastSeenHeight = blockHeight;
+                x1WalletFile.SaveX1WalletFile(x1WalletFile.CurrentPath);
+                return existing;
+            }
+
+            if (x1WalletFile.LookAhead.TryGetValue(bech32, out var gapAddress))
+            {
+                gapAddress.LastSeenHeight = blockHeight;
+                x1WalletFile.PubKeyHashAddresses[gapAddress.Address] = gapAddress;
+                x1WalletFile.LookAhead.TryRemove(gapAddress.Address, out var _);
+                x1WalletFile.SaveX1WalletFile(x1WalletFile.CurrentPath);
+                return gapAddress;
+            }
+            return null;
         }
 
         public static ISegWitAddress FindAddress(string bech32, X1WalletFile x1WalletFile)
@@ -182,7 +252,7 @@ namespace Obsidian.Features.X1Wallet.Addresses
         static readonly Func<PubKeyHashAddress, bool> ChangeAddressesNeverSeenUsedOnTheChain = (x) => x.KeyMaterial.KeyType == KeyType.Hd &&   // must be hd
                                                                                       x.KeyMaterial.AddressIndex.HasValue &&   // if valid hd, this must have a value
                                                                                       x.KeyMaterial.IsChange == C.Change &&    // we require it's a change address 
-                                                                                      x.FirstSeenUtc == null;
+                                                                                      x.LastSeenHeight == null;
         static readonly Func<PubKeyHashAddress, bool> AllPubKeyHashReceiveAddresses = (x) => x.AddressType == AddressType.PubKeyHash &&
                                                                                       x.KeyMaterial.IsChange != C.Change;
 

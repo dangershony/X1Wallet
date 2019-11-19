@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Net;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -104,6 +103,7 @@ namespace Obsidian.Features.X1Wallet
                 if (header != null && this.metadata.CheckpointHeight == header.Height)
                     checkpointHeader = header;  // the checkpoint header is in the correct chain and the the checkpoint height in the wallet is consistent
             }
+
             if (checkpointHeader != null && this.nodeServices.ChainIndexer.Tip.Height - checkpointHeader.Height > C.Network.Consensus.MaxReorgLength)  // also check the checkpoint is not newer than it should be
             {
                 // we have a valid checkpoint, remove all later blocks
@@ -128,11 +128,17 @@ namespace Obsidian.Features.X1Wallet
 
         void ProcessBlock(Block block, int height, uint256 hashBlock)
         {
-            var walletBlock = BlockService.AnalyzeBlock(block, this.metadata.Blocks.Values, GetOwnAddress);
+            var walletBlock = BlockService.AnalyzeBlock(block, height, this.metadata.Blocks.Values, GetOrAddAddress);
 
             if (walletBlock != null)
             {
-                this.metadata.Blocks.Add(height, walletBlock);
+                if (!this.metadata.Blocks.TryAdd(height, walletBlock))
+                {
+                    MoveToBestChain();
+                    SyncWallet();
+                }
+
+
                 MigrateMemoryPoolTransactions(walletBlock.Transactions);
 
                 Log.BlockAddedToWallet(height, walletBlock);
@@ -152,7 +158,7 @@ namespace Obsidian.Features.X1Wallet
             }
         }
 
-       
+
 
         void UpdateLastBlockSyncedAndCheckpoint(int height, uint256 hashBlock)
         {
@@ -183,7 +189,7 @@ namespace Obsidian.Features.X1Wallet
         {
             var blocksAfterCheckpoint = this.metadata.Blocks.Keys.Where(x => x > checkpointHeader.Height).ToArray();
             foreach (var height in blocksAfterCheckpoint)
-                this.metadata.Blocks.Remove(height);
+                this.metadata.Blocks.TryRemove(height, out var _);
 
 
             // Update last block synced height
@@ -204,7 +210,6 @@ namespace Obsidian.Features.X1Wallet
             this.metadata.SyncedHeight = 0;
             this.metadata.CheckpointHash = this.metadata.SyncedHash;
             this.metadata.CheckpointHeight = 0;
-            this.metadata.Blocks = new Dictionary<int, BlockMetadata>();
             this.metadata.WalletGuid = this.x1WalletFile.WalletGuid;
 
             SaveMetadata();
@@ -221,6 +226,11 @@ namespace Obsidian.Features.X1Wallet
             return AddressService.FindAddress(bech32Address, this.x1WalletFile);
         }
 
+        ISegWitAddress GetOrAddAddress(string bech32Address, int blockHeight)
+        {
+            return AddressService.GetOrAddAddress(bech32Address, blockHeight, this.x1WalletFile);
+        }
+
         protected abstract void SubscribeSignals();
 
         protected byte[] GetPassphraseChallenge()
@@ -231,6 +241,7 @@ namespace Obsidian.Features.X1Wallet
         protected void SetStakingPassphrase(string passphrase)
         {
             this.stakingPassphrase = passphrase;
+            AddressService.TryUpdateLookAhead(passphrase, this.x1WalletFile);
         }
 
         protected Balance GetBalanceCore(string matchAddress = null, AddressType matchAddressType = AddressType.MatchAll)
@@ -417,7 +428,7 @@ namespace Obsidian.Features.X1Wallet
 
             if (memoryPoolEntry == null)
             {
-                TransactionMetadata walletTransaction = BlockService.AnalyzeTransaction(broadcastEntry.Transaction, this.metadata.Blocks.Values, GetOwnAddress);
+                TransactionMetadata walletTransaction = BlockService.AnalyzeTransaction(broadcastEntry.Transaction, int.MaxValue, this.metadata.Blocks.Values, GetOrAddAddress);
                 if (walletTransaction != null)
                 {
                     var entry = MemoryPoolService.CreateMemoryPoolEntry(walletTransaction, broadcastEntry);
@@ -433,7 +444,7 @@ namespace Obsidian.Features.X1Wallet
 
         protected void ReceiveTransactionFromMemoryPool(Transaction transaction)
         {
-            var walletTransaction = BlockService.AnalyzeTransaction(transaction, this.metadata.Blocks.Values, GetOwnAddress);
+            var walletTransaction = BlockService.AnalyzeTransaction(transaction, int.MaxValue, this.metadata.Blocks.Values, GetOrAddAddress);
             if (walletTransaction != null)
             {
                 var entry = MemoryPoolService.CreateMemoryPoolEntry(walletTransaction, null);
@@ -474,6 +485,8 @@ namespace Obsidian.Features.X1Wallet
         {
             if (passphrase == null)
                 passphrase = this.stakingPassphrase;
+
+            AddressService.TryUpdateLookAhead(passphrase, this.x1WalletFile);
 
             return AddressService.GetChangeAddress(passphrase, isDummy, this.x1WalletFile);
         }

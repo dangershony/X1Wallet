@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -18,9 +19,10 @@ namespace Obsidian.Features.X1Wallet.Models.Wallet
 
         public X1WalletFile()
         {
-            this.PubKeyHashAddresses = new Dictionary<string, PubKeyHashAddress>();
-            this.MultiSigAddresses = new Dictionary<string, MultiSigAddress>();
-            this.ColdStakingAddresses = new Dictionary<string, ColdStakingAddress>();
+            this.LookAhead = new ConcurrentDictionary<string, PubKeyHashAddress>();
+            this.PubKeyHashAddresses = new ConcurrentDictionary<string, PubKeyHashAddress>();
+            this.MultiSigAddresses = new ConcurrentDictionary<string, MultiSigAddress>();
+            this.ColdStakingAddresses = new ConcurrentDictionary<string, ColdStakingAddress>();
         }
 
         public int Version { get; set; }
@@ -56,11 +58,13 @@ namespace Obsidian.Features.X1Wallet.Models.Wallet
 
         public bool HdSeedHasBip39Passphrase { get; set; }
 
-        public Dictionary<string, PubKeyHashAddress> PubKeyHashAddresses { get; set; }
+        public ConcurrentDictionary<string, PubKeyHashAddress> PubKeyHashAddresses { get; set; }
 
-        public Dictionary<string, ColdStakingAddress> ColdStakingAddresses { get; set; }
+        public ConcurrentDictionary<string, ColdStakingAddress> ColdStakingAddresses { get; set; }
 
-        public Dictionary<string, MultiSigAddress> MultiSigAddresses { get; set; }
+        public ConcurrentDictionary<string, MultiSigAddress> MultiSigAddresses { get; set; }
+
+        public ConcurrentDictionary<string, PubKeyHashAddress> LookAhead { get; set; }
 
         [JsonIgnore]
         public string CurrentPath { get; set; }

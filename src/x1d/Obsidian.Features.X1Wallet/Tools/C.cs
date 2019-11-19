@@ -38,7 +38,7 @@ namespace Obsidian.Features.X1Wallet.Tools
         /// <summary>
         /// How much unused addresses the wallet should ahead.
         /// </summary>
-        public const int GapLimit = 2;
+        public const int GapLimit = 50;
 
         /// <summary>
         /// A coin has 100_000_000 Satoshis.

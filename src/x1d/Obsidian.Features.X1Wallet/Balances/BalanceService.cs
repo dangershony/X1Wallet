@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using Obsidian.Features.X1Wallet.Models.Wallet;
@@ -9,7 +10,7 @@ namespace Obsidian.Features.X1Wallet.Balances
 {
     static class BalanceService
     {
-        public static Balance GetBalance(Dictionary<int, BlockMetadata> blocks, int syncedHeight, HashSet<MemoryPoolEntry> memoryPoolEntries, Func<string, ISegWitAddress> getOwnAddress,  
+        public static Balance GetBalance(ConcurrentDictionary<int, BlockMetadata> blocks, int syncedHeight, HashSet<MemoryPoolEntry> memoryPoolEntries, Func<string, ISegWitAddress> getOwnAddress,  
             string matchAddress = null, AddressType matchAddressType = AddressType.MatchAll)
         {
             var balance = new Balance();

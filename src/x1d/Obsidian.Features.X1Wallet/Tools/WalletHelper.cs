@@ -142,7 +142,6 @@ namespace Obsidian.Features.X1Wallet.Tools
                 WalletGuid = x1WalletFile.WalletGuid,
                 CheckpointHash = genesisHash,
                 SyncedHash = genesisHash,
-                Blocks = new Dictionary<int, BlockMetadata>(),
                 MemoryPool = new MemoryPoolMetadata { Entries = new HashSet<MemoryPoolEntry>() }
             };
         }
