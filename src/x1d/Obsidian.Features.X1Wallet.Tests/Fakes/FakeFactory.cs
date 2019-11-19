@@ -93,8 +93,9 @@ namespace Obsidian.Features.X1Wallet.Tests.Fakes
                 chainState: null,
                 networkDifficulty: null,
                 network: this.Network,
-                loggerFactory: this.loggerFactory
-                );
+                loggerFactory: this.loggerFactory,
+                timeSyncBehaviorState: null
+            );
             return controller;
         }
 

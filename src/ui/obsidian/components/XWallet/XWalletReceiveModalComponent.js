@@ -23,7 +23,7 @@ const XWalletReceiveModalComponent = ({
   const notifyOfCopy = () =>
     showNotification(intl.formatMessage({ ...xmessages.address_copied_notification_description }))
 
-  let { unusedAddress, defaultAddress } = fullNodeSettings.walletInfo.walletDetails
+  let { unusedAddress, defaultReceiveAddress } = fullNodeSettings.walletInfo.walletDetails
 
   let ok = false
   let isUsed
@@ -32,8 +32,8 @@ const XWalletReceiveModalComponent = ({
     receiveAddress = unusedAddress
     isUsed = false
     ok = true
-  } else if (defaultAddress && defaultAddress.length === sampleAddress.length) {
-    receiveAddress = defaultAddress
+  } else if (defaultReceiveAddress && defaultReceiveAddress.length === sampleAddress.length) {
+    receiveAddress = defaultReceiveAddress
     isUsed = true
     ok = true
   } else {

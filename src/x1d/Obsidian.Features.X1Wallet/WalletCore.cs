@@ -36,12 +36,15 @@ namespace Obsidian.Features.X1Wallet
         long startupDuration;
         Timer startupTimer;
 
+        string stakingPassphrase;
+
         protected WalletCore(NodeServices nodeServices, string walletPath)
         {
             this.nodeServices = nodeServices;
 
             this.WalletPath = walletPath;
             this.x1WalletFile = WalletHelper.LoadX1WalletFile(walletPath);
+            this.x1WalletFile.CurrentPath = walletPath;
             this.WalletName = this.x1WalletFile.WalletName;
             this.metadataPath = this.x1WalletFile.WalletName.GetX1WalletMetaDataFilepath(C.Network, nodeServices.DataFolder);
             this.metadata = WalletHelper.LoadOrCreateX1WalletMetadataFile(this.metadataPath, this.x1WalletFile, C.Network.GenesisHash);
@@ -149,6 +152,8 @@ namespace Obsidian.Features.X1Wallet
             }
         }
 
+       
+
         void UpdateLastBlockSyncedAndCheckpoint(int height, uint256 hashBlock)
         {
             this.metadata.SyncedHeight = height;
@@ -189,10 +194,6 @@ namespace Obsidian.Features.X1Wallet
             SaveMetadata();
         }
 
-
-
-
-
         /// <summary>
         /// Clears and initializes the wallet Metadata file, and sets heights to 0 and the hashes to null,
         /// and saves the Metadata file, effectively updating it to the latest version.
@@ -217,7 +218,7 @@ namespace Obsidian.Features.X1Wallet
 
         ISegWitAddress GetOwnAddress(string bech32Address)
         {
-            return this.x1WalletFile.FindAddress(bech32Address);
+            return AddressService.FindAddress(bech32Address, this.x1WalletFile);
         }
 
         protected abstract void SubscribeSignals();
@@ -225,6 +226,11 @@ namespace Obsidian.Features.X1Wallet
         protected byte[] GetPassphraseChallenge()
         {
             return this.x1WalletFile.PassphraseChallenge;
+        }
+
+        protected void SetStakingPassphrase(string passphrase)
+        {
+            this.stakingPassphrase = passphrase;
         }
 
         protected Balance GetBalanceCore(string matchAddress = null, AddressType matchAddressType = AddressType.MatchAll)
@@ -438,11 +444,7 @@ namespace Obsidian.Features.X1Wallet
 
         protected PubKeyHashAddress[] GetAllPubKeyHashReceiveAddressesCore(int skip, int? take)
         {
-            var store = this.x1WalletFile.PubKeyHashAddresses.Values;
-            var filter = this.x1WalletFile.allPubKeyHashReceiveAddresses;
-            return take.HasValue
-                ? store.Where(filter).Skip(skip).Take(take.Value).ToArray()
-                : store.Where(filter).ToArray();
+            return AddressService.GetAllPubKeyHashReceiveAddresses(skip, take, this.x1WalletFile);
         }
 
         protected PubKeyHashAddress CreateNewReceiveAddressCore(string label, string passphrase)
@@ -456,13 +458,13 @@ namespace Obsidian.Features.X1Wallet
             if (label.Length > 27)
                 throw new X1WalletException("The maximum length for the label is 27 characters.");
 
-            if (!this.x1WalletFile.IsLabelUnique(label))
+            if (!AddressService.IsLabelUnique(label, this.x1WalletFile))
                 throw new X1WalletException($"The label '{label}' is already in use.");
 
             if (string.IsNullOrWhiteSpace(passphrase))
                 throw new X1WalletException("The wallet passphrase is required.");
 
-            var newAddress = this.x1WalletFile.CreateAndInsertNewReceiveAddress(label, passphrase);
+            var newAddress = AddressService.CreateAndInsertNewReceiveAddress(label, passphrase, this.x1WalletFile);
             Log.Logger.LogInformation(
                 $"Created and saved new receive address '{newAddress.Address}' with label '{newAddress.Label}'");
             return newAddress;
@@ -470,12 +472,15 @@ namespace Obsidian.Features.X1Wallet
 
         protected PubKeyHashAddress GetUnusedChangeAddressCore(string passphrase, bool isDummy)
         {
-            return this.x1WalletFile.GetChangeAddress(passphrase, isDummy);
+            if (passphrase == null)
+                passphrase = this.stakingPassphrase;
+
+            return AddressService.GetChangeAddress(passphrase, isDummy, this.x1WalletFile);
         }
 
         protected bool IsLabelUniqueCore(string label)
         {
-            return this.x1WalletFile.IsLabelUnique(label);
+            return AddressService.IsLabelUnique(label, this.x1WalletFile);
         }
 
         bool IsWalletInPerfectShape()

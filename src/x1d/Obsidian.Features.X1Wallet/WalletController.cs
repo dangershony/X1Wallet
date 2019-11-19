@@ -44,6 +44,7 @@ namespace Obsidian.Features.X1Wallet
         readonly INetworkDifficulty networkDifficulty;
         readonly ILoggerFactory loggerFactory;
         readonly ILogger logger;
+        readonly ITimeSyncBehaviorState timeSyncBehaviorState;
 
         string walletName;
 
@@ -84,7 +85,8 @@ namespace Obsidian.Features.X1Wallet
             NodeSettings nodeSettings,
             IChainState chainState,
             INetworkDifficulty networkDifficulty,
-            ILoggerFactory loggerFactory
+            ILoggerFactory loggerFactory,
+            ITimeSyncBehaviorState timeSyncBehaviorState
             )
         {
             this.walletManagerFactory = walletManagerFactory;
@@ -99,6 +101,7 @@ namespace Obsidian.Features.X1Wallet
             this.networkDifficulty = networkDifficulty;
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(typeof(WalletController).Name);
+            this.timeSyncBehaviorState = timeSyncBehaviorState;
         }
 
         public HistoryInfo GetHistoryInfo(HistoryRequest historyRequest)
@@ -153,6 +156,17 @@ namespace Obsidian.Features.X1Wallet
 
         public void StartStaking(StartStakingRequest startStakingRequest)
         {
+            if (!C.Network.Consensus.IsProofOfStake)
+                throw new X1WalletException(HttpStatusCode.BadRequest, "Staking requires a Proof-of-Stake consensus.");
+
+            if (this.timeSyncBehaviorState.IsSystemTimeOutOfSync)
+            {
+                string errorMessage = "Staking cannot start, your system time does not match that of other nodes on the network." + Environment.NewLine
+                                                                                                                                  + "Please adjust your system time and restart the node.";
+                Log.Logger.LogError(errorMessage);
+                throw new X1WalletException(HttpStatusCode.InternalServerError, errorMessage);
+            }
+
             using var context = GetWalletContext();
             context.WalletManager.StartStaking(startStakingRequest.Passphrase);
         }

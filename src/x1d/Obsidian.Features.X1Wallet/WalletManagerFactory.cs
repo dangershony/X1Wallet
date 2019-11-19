@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using NBitcoin;
+using Obsidian.Features.X1Wallet.Addresses;
 using Obsidian.Features.X1Wallet.Models.Api.Requests;
 using Obsidian.Features.X1Wallet.Models.Wallet;
 using Obsidian.Features.X1Wallet.Tools;
@@ -112,7 +113,8 @@ namespace Obsidian.Features.X1Wallet
                 Comment = "Your notes here!",
                 Version = C.WalletKeyFileVersion,
                 PassphraseChallenge = KeyHelper.GenerateRandomKeyMaterial(walletCreateRequest.Passphrase, 32)
-                    .EncryptedPrivateKey
+                    .EncryptedPrivateKey,
+                CurrentPath = filePath
             };
 
 
@@ -127,9 +129,9 @@ namespace Obsidian.Features.X1Wallet
             x1WalletFile.HdSeedHasBip39Passphrase = !string.IsNullOrWhiteSpace(bip39Passphrase);
 
             // Create one receive addresses, so that GetUsedReceiveAddresses returns at least one address, even if it is not used in this case.
-            x1WalletFile.CreateAndInsertNewReceiveAddress("Default address", walletCreateRequest.Passphrase);
+            AddressService.CreateAndInsertNewReceiveAddress("Default address", walletCreateRequest.Passphrase, x1WalletFile);
 
-            x1WalletFile.CreateAndInsertNewChangeAddresses(walletCreateRequest.Passphrase, C.UnusedChangeAddressBuffer);
+            AddressService.CreateAndInsertNewChangeAddresses(walletCreateRequest.Passphrase, C.UnusedChangeAddressBuffer, x1WalletFile);
 
             x1WalletFile.SaveX1WalletFile(filePath);
 

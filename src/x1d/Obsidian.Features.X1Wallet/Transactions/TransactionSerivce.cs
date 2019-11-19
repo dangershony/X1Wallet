@@ -143,14 +143,18 @@ namespace Obsidian.Features.X1Wallet.Transactions
                     $"Required are at least {totalToSelect}, but spendable is only {balance.Spendable}");
 
             long selectedAmount = 0;
-            while (selectedAmount < totalToSelect)
+            var selectedCoins = new List<SegWitCoin>();
+            foreach (var coin in balance.SpendableCoins.Values)
             {
-                foreach (var coin in balance.SpendableCoins.Values)
+                if (selectedAmount < totalToSelect)
                 {
+                    selectedCoins.Add(coin);
                     selectedAmount += coin.UtxoValue;
-                    yield return coin;
                 }
+                else
+                    return selectedCoins;
             }
+            return selectedCoins;
         }
 
         TxOut GetOutputForChange(string passphrase, bool isDummy)

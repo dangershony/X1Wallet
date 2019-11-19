@@ -148,16 +148,8 @@ namespace Obsidian.Features.X1Wallet
             if (VCL.DecryptWithPassphrase(passphrase, base.GetPassphraseChallenge()) == null)
                 throw new X1WalletException(HttpStatusCode.Unauthorized, "The passphrase is not correct.");
 
-            if (!C.Network.Consensus.IsProofOfStake)
-                throw new X1WalletException(HttpStatusCode.BadRequest, "Staking requires a Proof-of-Stake consensus.");
-
-            if (this.nodeServices.TimeSyncBehaviorState.IsSystemTimeOutOfSync)
-            {
-                string errorMessage = "Staking cannot start, your system time does not match that of other nodes on the network." + Environment.NewLine
-                                                                                                                                  + "Please adjust your system time and restart the node.";
-                Log.Logger.LogError(errorMessage);
-                throw new X1WalletException(HttpStatusCode.InternalServerError, errorMessage);
-            }
+            base.SetStakingPassphrase(passphrase);
+           
 
             if (this.stakingService == null)
             {

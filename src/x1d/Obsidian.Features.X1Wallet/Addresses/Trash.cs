@@ -10,7 +10,7 @@ using VisualCrypt.VisualCryptLight;
 
 namespace Obsidian.Features.X1Wallet.Addresses
 {
-    static class AddressService
+    static class Trash
     {
 
        
