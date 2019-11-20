@@ -48,7 +48,7 @@ namespace Obsidian.x1d.Util
 
                 //SpendFromMultiSig();
 
-                //await StartMiningAsync();
+                await StartMiningAsync();
 
                 await Task.Delay(20000);
 
