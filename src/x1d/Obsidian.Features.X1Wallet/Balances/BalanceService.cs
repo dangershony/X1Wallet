@@ -60,8 +60,13 @@ namespace Obsidian.Features.X1Wallet.Balances
                     if (tx.Spent != null)
                         foreach ((string txIdN, UtxoMetadata utxo) in tx.Spent)
                         {
-                            balance.TotalSpent += utxo.Satoshis;
-                            spent.AddSafe(txIdN, utxo);
+                            for (var address = getOwnAddress(utxo.Address).Match(matchAddress, matchAddressType);
+                                address != null;
+                                address = null)
+                            {
+                                balance.TotalSpent += utxo.Satoshis;
+                                spent.AddSafe(txIdN, utxo);
+                            }
                         }
 
                 }
@@ -85,10 +90,15 @@ namespace Obsidian.Features.X1Wallet.Balances
                     }
 
                 if (tx.Spent != null)
-                    foreach (var s in tx.Spent)
+                    foreach (var (txIdN, utxo) in tx.Spent)
                     {
-                        balance.TotalSpentPending += s.Value.Satoshis;
-                        spent.AddSafe(s.Key, s.Value);
+                        for (var address = getOwnAddress(utxo.Address).Match(matchAddress, matchAddressType);
+                            address != null;
+                            address = null)
+                        {
+                            balance.TotalSpent += utxo.Satoshis;
+                            spent.AddSafe(txIdN, utxo);
+                        }
                     }
             }
 

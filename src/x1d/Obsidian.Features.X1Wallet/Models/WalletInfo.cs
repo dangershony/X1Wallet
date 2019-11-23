@@ -51,7 +51,17 @@ namespace Obsidian.Features.X1Wallet.Models
         public string DefaultReceiveAddress;
         public StakingInfo StakingInfo;
         public string PassphraseChallenge;
-        internal int MultiSigAddresses;
-        internal int ColdStakingAddresses;
+       
+        public int ColdStakingAddresses;
+        public string DefaultCSAddress;
+        public long CSTotal;
+        public long CSSpendable;
+        public long CSStakable;
+
+        public int MultiSigAddresses;
+        public string DefaultMSAddress;
+        public long MSTotal;
+        public long MSSpendable;
+        public long MSStakable;
     }
 }

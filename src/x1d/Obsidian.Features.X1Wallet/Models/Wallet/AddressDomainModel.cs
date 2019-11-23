@@ -151,11 +151,18 @@ namespace Obsidian.Features.X1Wallet.Models.Wallet
 
         public KeyMaterial HotKey { get; set; }
 
+        public byte[] StakingKey { get; set; }
+
         public byte[] GetEncryptedPrivateKey()
         {
             if (this.AddressType == AddressType.ColdStakingCold)
                 return this.ColdKey.EncryptedPrivateKey;
             return this.HotKey.EncryptedPrivateKey;
+        }
+
+        public Script GetRedeemScript()
+        {
+            return new Script(this.RedeemScriptHex.FromHexString());
         }
     }
 }

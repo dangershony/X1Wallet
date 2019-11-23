@@ -53,6 +53,7 @@ namespace Obsidian.x1d.Util
                 await Task.Delay(20000);
 
                 //await SplitAsync();
+               // await SplitForColdStakingAsync();
 
                 for (i = 0; i < 50; i++)
                 {
@@ -168,7 +169,12 @@ namespace Obsidian.x1d.Util
             }
         }
 
+        static async Task SplitForColdStakingAsync()
+        {
 
+
+            TransactionResponse model = Controller.SplitCoinsForColdStaking(new TransactionRequest { Passphrase = _passPhrase, Sign = true, Send = true });
+        }
 
 
         static async Task SplitAsync()

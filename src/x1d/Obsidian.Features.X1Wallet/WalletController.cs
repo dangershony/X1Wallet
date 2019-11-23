@@ -190,6 +190,25 @@ namespace Obsidian.Features.X1Wallet
             return response.Fee;
         }
 
+        public TransactionResponse SplitCoinsForColdStaking(TransactionRequest request)
+        {
+            var wm = this.walletManagerFactory.AutoLoad2(this.walletName);
+
+            var balance = wm.GetBalance(null, AddressType.PubKeyHash);
+            var outputsToCreate = 125;
+
+            var defaultColdStakingAddress = wm.GetAllMultiSigAddresses(0, 1).First();
+            var each = (balance.Spendable / 3 - (10000 * C.SatoshisPerCoin)) / outputsToCreate;
+            var eachInCoinUnits = each / C.SatoshisPerCoin;
+            request.Recipients = new List<Recipient>();
+            for (var i = 0; i < outputsToCreate; i++)
+            {
+                request.Recipients.Add(new Recipient { Address = defaultColdStakingAddress.Address, Amount = each });
+            }
+            return BuildTransaction(request);
+        }
+
+
         public TransactionResponse BuildSplitTransaction(TransactionRequest request)
         {
             var wm = this.walletManagerFactory.AutoLoad2(this.walletName);
@@ -200,10 +219,10 @@ namespace Obsidian.Features.X1Wallet
             var eachInCoinUnits = each / C.SatoshisPerCoin;
             request.Recipients = addresses.Select(x => new Recipient { Address = x.Address, Amount = each }).ToList();
 
-            
-            
+
+
             return BuildTransaction(request);
-            
+
         }
 
         public TransactionResponse BuildTransaction(TransactionRequest request)

@@ -123,6 +123,16 @@ namespace Obsidian.Features.X1Wallet
             return base.GetAllPubKeyHashReceiveAddressesCore(skip, take);
         }
 
+        internal ColdStakingAddress[] GetAllColdStakingAddresses(int skip, int? take)
+        {
+            return base.GetAllColdStakingAddressesCore(skip, take);
+        }
+
+        internal MultiSigAddress[] GetAllMultiSigAddresses(int skip, int? take)
+        {
+            return base.GetAllMultiSigAddressesCore(skip, take);
+        }
+
         internal PubKeyHashAddress CreateReceiveAddress(string label, string passphrase)
         {
             Guard.NotNull(label, nameof(label));

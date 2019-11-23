@@ -204,7 +204,7 @@ namespace Obsidian.Features.X1Wallet.Addresses
             var receiveAddressGaps = GetIndexGaps(C.External, x1WalletFile);
             foreach (var index in receiveAddressGaps)
             {
-                var generated = GeneratePubKeyHashAddress(decryptedSeed, passphrase, x1WalletFile.CoinType, C.Change, index);
+                var generated = GeneratePubKeyHashAddress(decryptedSeed, passphrase, x1WalletFile.CoinType, C.External, index);
                 x1WalletFile.LookAhead[generated.Address] = generated;
             }
 

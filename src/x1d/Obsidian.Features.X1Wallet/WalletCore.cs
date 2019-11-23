@@ -242,6 +242,7 @@ namespace Obsidian.Features.X1Wallet
         {
             this.stakingPassphrase = passphrase;
             AddressService.TryUpdateLookAhead(passphrase, this.x1WalletFile);
+            ColdStakingAddressService.EnsureDefaultColdStakingAddress(passphrase, this.x1WalletFile);
         }
 
         protected Balance GetBalanceCore(string matchAddress = null, AddressType matchAddressType = AddressType.MatchAll)
@@ -252,6 +253,38 @@ namespace Obsidian.Features.X1Wallet
 
         protected WalletDetails GetWalletDetailsCore()
         {
+            var defaultCsAddress = this.GetAllColdStakingAddressesCore(0, 1).FirstOrDefault()?.Address;
+            long csTotal = 0;
+            long csSpendable = 0;
+            long csStakable = 0;
+           
+            if (defaultCsAddress != null)
+            {
+                var balance = BalanceService.GetBalance(this.metadata.Blocks, this.metadata.SyncedHeight,
+                    this.metadata.MemoryPool.Entries, GetOwnAddress,defaultCsAddress);
+
+                csTotal = balance.Total;
+                csSpendable = balance.Spendable;
+                csStakable = balance.Stakable;
+
+            }
+
+            var defaultMsAddress = this.GetAllMultiSigAddressesCore(0, 1).FirstOrDefault()?.Address;
+            long msTotal = 0;
+            long msSpendable = 0;
+            long msStakable = 0;
+
+            if (defaultMsAddress != null)
+            {
+                var balance = BalanceService.GetBalance(this.metadata.Blocks, this.metadata.SyncedHeight,
+                    this.metadata.MemoryPool.Entries, GetOwnAddress, defaultMsAddress);
+
+                msTotal = balance.Total;
+                msSpendable = balance.Spendable;
+                msStakable = balance.Stakable;
+
+            }
+
             var info = new WalletDetails
             {
                 WalletName = this.WalletName,
@@ -263,7 +296,17 @@ namespace Obsidian.Features.X1Wallet
                 ColdStakingAddresses = this.x1WalletFile.ColdStakingAddresses.Count,
                 MemoryPool = this.metadata.MemoryPool,
                 PassphraseChallenge = this.x1WalletFile.PassphraseChallenge.ToHexString(),
-                DefaultReceiveAddress = this.GetAllPubKeyHashReceiveAddressesCore(0, 1).FirstOrDefault()?.Address
+                DefaultReceiveAddress = this.GetAllPubKeyHashReceiveAddressesCore(0, 1).FirstOrDefault()?.Address,
+
+                DefaultCSAddress = defaultCsAddress,
+                CSTotal = csTotal,
+                CSSpendable = csSpendable,
+                CSStakable = csStakable,
+
+                DefaultMSAddress = defaultMsAddress,
+                MSTotal = msTotal,
+                MSSpendable = msSpendable,
+                MSStakable = msStakable
             };
 
             info.Balance = GetBalanceCore();
@@ -456,6 +499,16 @@ namespace Obsidian.Features.X1Wallet
         protected PubKeyHashAddress[] GetAllPubKeyHashReceiveAddressesCore(int skip, int? take)
         {
             return AddressService.GetAllPubKeyHashReceiveAddresses(skip, take, this.x1WalletFile);
+        }
+
+        protected ColdStakingAddress[] GetAllColdStakingAddressesCore(int skip, int? take)
+        {
+            return ColdStakingAddressService.GetAllColdStakingAddresses(skip, take, this.x1WalletFile);
+        }
+
+        protected MultiSigAddress[] GetAllMultiSigAddressesCore(int skip, int? take)
+        {
+            return MultiSigAddressService.GetAllMultiSigAddresses(skip, take, this.x1WalletFile);
         }
 
         protected PubKeyHashAddress CreateNewReceiveAddressCore(string label, string passphrase)

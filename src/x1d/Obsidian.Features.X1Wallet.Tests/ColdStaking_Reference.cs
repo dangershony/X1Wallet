@@ -12,10 +12,12 @@ namespace Obsidian.Features.X1Wallet.Tests
     public class ColdStaking_Reference
     {
         readonly ITestOutputHelper output;
+        readonly Money fee;
 
         public ColdStaking_Reference(ITestOutputHelper output)
         {
             this.output = output;
+            this.fee = Money.Coins(0.00023500m *2);
         }
 
         [Fact]
@@ -47,7 +49,7 @@ namespace Obsidian.Features.X1Wallet.Tests
                     .AddCoins(myBudgetCoins)
                     .Send(csScriptPubKey, Money.Coins(90_000)) // 90_000 to cold staking
                     .SetChange(myBudgetPubKey.WitHash.ScriptPubKey) // 10_000 back to original source
-                    .SendFees(Money.Satoshis(500))
+                    .SendFees(this.fee)
                     .AddKeys(myBudgetKey)
                     .BuildTransaction(sign: true);
 
@@ -101,7 +103,7 @@ namespace Obsidian.Features.X1Wallet.Tests
                     .AddCoins(myBudgetCoins)
                     .Send(csScriptAddressScriptPubKey, Money.Coins(90_000)) // 90_000 to cold staking script address
                     .SetChange(myBudgetPubKey.WitHash.ScriptPubKey) // 10_000 back to original source
-                    .SendFees(Money.Satoshis(500))
+                    .SendFees(this.fee)
                     .AddKeys(myBudgetKey)
                     .BuildTransaction(sign: true);
 
@@ -132,7 +134,7 @@ namespace Obsidian.Features.X1Wallet.Tests
                 .AddCoins(csScriptCoins)
                 .Send(myBudgetPubKey.WitHash.ScriptPubKey, Money.Coins(80_000)) // withdraw 80_000 of the 90_000 I previously sent to the cold staking script address
                 .SetChange(csScriptAddressScriptPubKey) // Change goes back the CS script address
-                .SendFees(Money.Satoshis(500))
+                .SendFees(this.fee)
                 .AddKeys(coldKey) // use the cold private key for the withdrawal
                 .BuildTransaction(sign: true);
 
