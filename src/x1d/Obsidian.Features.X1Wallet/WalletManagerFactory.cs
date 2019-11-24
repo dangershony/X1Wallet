@@ -134,12 +134,13 @@ namespace Obsidian.Features.X1Wallet
         {
             string walletName = walletCreateRequest.WalletName;
             string filePath = walletName.GetX1WalletFilepath(C.Network, this.nodeServices.DataFolder);
+            string passphrase = walletCreateRequest.Passphrase;
 
             if (File.Exists(filePath))
                 throw new InvalidOperationException(
                     $"A wallet with the name {walletName} already exists at {filePath}!");
 
-            if (string.IsNullOrWhiteSpace(walletCreateRequest.Passphrase))
+            if (string.IsNullOrWhiteSpace(passphrase))
                 throw new InvalidOperationException("A passphrase is required.");
 
             DateTime now = DateTime.UtcNow;
@@ -155,7 +156,7 @@ namespace Obsidian.Features.X1Wallet
                 LastBackupUtc = null,
                 Comment = "Your notes here!",
                 Version = C.WalletKeyFileVersion,
-                PassphraseChallenge = KeyHelper.GenerateRandomKeyMaterial(walletCreateRequest.Passphrase, 32)
+                PassphraseChallenge = KeyHelper.GenerateRandomKeyMaterial(passphrase, 32)
                     .EncryptedPrivateKey,
                 CurrentPath = filePath
             };
@@ -168,15 +169,19 @@ namespace Obsidian.Features.X1Wallet
             var mnemonic = new Mnemonic(wl, mnemonicBytes);
             byte[] hdSeed = mnemonic.DeriveSeed(bip39Passphrase);
 
-            x1WalletFile.HdSeed = VCL.EncryptWithPassphrase(walletCreateRequest.Passphrase, hdSeed);
+            x1WalletFile.HdSeed = VCL.EncryptWithPassphrase(passphrase, hdSeed);
             x1WalletFile.HdSeedHasBip39Passphrase = !string.IsNullOrWhiteSpace(bip39Passphrase);
 
             // Create one receive addresses, so that GetUsedReceiveAddresses returns at least one address, even if it is not used in this case.
-            AddressService.CreateAndInsertNewReceiveAddress("Default address", walletCreateRequest.Passphrase, x1WalletFile);
+            AddressService.CreateAndInsertNewReceiveAddress("Default address", passphrase, x1WalletFile);
 
-            AddressService.CreateAndInsertNewChangeAddresses(walletCreateRequest.Passphrase, C.UnusedChangeAddressBuffer, x1WalletFile);
+            AddressService.CreateAndInsertNewChangeAddresses(passphrase, C.UnusedChangeAddressBuffer, x1WalletFile);
 
-            AddressService.TryUpdateLookAhead(walletCreateRequest.Passphrase, x1WalletFile);
+            ColdStakingAddressService.EnsureDefaultColdStakingAddress(passphrase, x1WalletFile);
+            MultiSigAddressService.EnsureDefaultMultisigAddress(passphrase, x1WalletFile);
+
+
+            AddressService.TryUpdateLookAhead(passphrase, x1WalletFile);
 
             x1WalletFile.SaveX1WalletFile(filePath);
 

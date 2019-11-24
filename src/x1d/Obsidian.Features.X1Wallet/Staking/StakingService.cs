@@ -30,7 +30,6 @@ namespace Obsidian.Features.X1Wallet.Staking
         readonly string passphrase;
         readonly NodeServices nodeServices;
         readonly Stopwatch stopwatch;
-        readonly CoinstakeTransactionService coinstakeTransactionService;
 
         public StakingService(WalletManager walletManager, string passphrase, NodeServices nodeServices)
         {
@@ -44,7 +43,6 @@ namespace Obsidian.Features.X1Wallet.Staking
             this.Status = new StakingStatus { StartedUtc = DateTimeOffset.UtcNow.ToUnixTimeSeconds() };
             this.PosV3 = new PosV3 { SearchInterval = 64, BlockInterval = 4 * 64 };
             this.LastStakedBlock = new StakedBlock();
-            this.coinstakeTransactionService = new CoinstakeTransactionService();
         }
 
         public void Start()
@@ -209,9 +207,7 @@ namespace Obsidian.Features.X1Wallet.Staking
             var totalReward = blockTemplate.TotalFee + this.nodeServices.PosCoinviewRule.GetProofOfStakeReward(newBlockHeight);
             blockTemplate.Block.Header.Time = (uint)this.PosV3.CurrentBlockTime;
 
-          
-
-            Transaction tx = this.coinstakeTransactionService.CreateCoinstakeTransaction(kernelCoin, totalReward.Satoshi, (uint)this.PosV3.CurrentBlockTime, this.passphrase, out Key blockSignatureKey);
+            Transaction tx = CoinstakeTransactionService.CreateAndSignCoinstakeTransaction(kernelCoin, totalReward.Satoshi, (uint)this.PosV3.CurrentBlockTime, this.passphrase, out Key blockSignatureKey);
 
             if (tx is PosTransaction posTransaction)
                 ((PosTransaction)blockTemplate.Block.Transactions[0]).Time = (uint)this.PosV3.CurrentBlockTime;
@@ -301,7 +297,7 @@ namespace Obsidian.Features.X1Wallet.Staking
             {
                 this.walletManager.WalletSemaphore.Wait();
 
-                Balance balance = this.walletManager.GetBalance(matchAddress: null, AddressType.ColdStakingHot);
+                Balance balance = this.walletManager.GetBalance(matchAddress: null, AddressType.MatchAll);
 
                 this.Status.UnspentOutputs = balance.StakingCoins.Count;
                 this.Status.Weight = balance.Stakable;

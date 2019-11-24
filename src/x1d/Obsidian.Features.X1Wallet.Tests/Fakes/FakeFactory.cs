@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using Obsidian.Features.X1Wallet.Models.Wallet;
 using Obsidian.Features.X1Wallet.Tools;
 using Stratis.Bitcoin.EventBus;
 using Stratis.Bitcoin.EventBus.CoreEvents;
@@ -9,6 +10,7 @@ using Stratis.Bitcoin.Signals;
 namespace Obsidian.Features.X1Wallet.Tests.Fakes
 {
     using System;
+    using System.Linq;
     using Microsoft.Extensions.Logging;
     using NBitcoin;
     using Obsidian.Networks.ObsidianX;
@@ -113,11 +115,21 @@ namespace Obsidian.Features.X1Wallet.Tests.Fakes
             }
         }
 
-        internal Script GetScriptPubKeyForMining(string walletName)
+        internal Script GetScriptPubKeyForMining(string walletName, AddressType addressType)
         {
-            using (var context = this.WalletManagerFactory.AutoLoad(walletName))
+
+            var wm = this.WalletManagerFactory.AutoLoad2(walletName);
+            switch(addressType)
             {
-                return context.WalletManager.GetAllPubKeyHashReceiveAddresses(C.External, 1)[0].GetScriptPubKey();
+                case AddressType.PubKeyHash:
+                return wm.GetAllPubKeyHashReceiveAddresses(C.External, 1)[0].GetScriptPubKey();
+                case AddressType.ColdStakingHot:
+                case AddressType.ColdStakingCold:
+                    return wm.GetAllColdStakingAddresses(0, 1).First(x => x.AddressType == addressType).GetScriptPubKey();
+                case AddressType.MultiSig:
+                    return wm.GetAllMultiSigAddresses(0, 1).First().GetScriptPubKey();
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(addressType));
             }
         }
 

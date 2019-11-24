@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Obsidian.Features.X1Wallet.Feature;
 using Obsidian.Features.X1Wallet.Models.Api.Requests;
+using Obsidian.Features.X1Wallet.Models.Wallet;
 using Obsidian.Features.X1Wallet.Tools;
 using Obsidian.Networks.ObsidianX.Rules;
 using Stratis.Bitcoin.EventBus.CoreEvents;
@@ -68,7 +69,7 @@ namespace Obsidian.Features.X1Wallet.Tests
             for (var i = 0; i < blockMined; i++)
             {
                 var transactions = new List<Transaction>();
-                transactions.Add(CreateCoinbase(this.factory.ChainIndexer.Tip.Height, this.factory.GetScriptPubKeyForMining(walletName), out var reward));
+                transactions.Add(CreateCoinbase(this.factory.ChainIndexer.Tip.Height, this.factory.GetScriptPubKeyForMining(walletName, AddressType.PubKeyHash), this.factory, out var reward));
                 totalMiningReward += reward;
                 ChainedHeaderBlock nextBlock = this.factory.AddNextBlock(transactions);
             }
@@ -103,13 +104,13 @@ namespace Obsidian.Features.X1Wallet.Tests
         /// Set the coin base with zero money.
         /// Once we have the fee we can update the amount.
         /// </summary>
-        public Transaction CreateCoinbase(int currentHeight, Script scriptPubKey, out long reward)
+        internal static Transaction CreateCoinbase(int currentHeight, Script scriptPubKey, FakeFactory fakeFactory, out long reward)
         {
-            var coinbase = this.factory.Network.CreateTransaction();
+            var coinbase = fakeFactory.Network.CreateTransaction();
 
-            reward = currentHeight == this.factory.Network.Consensus.PremineHeight
-                ? this.factory.Network.Consensus.PremineReward
-                : this.factory.Network.Consensus.ProofOfWorkReward;
+            reward = currentHeight == fakeFactory.Network.Consensus.PremineHeight
+                ? fakeFactory.Network.Consensus.PremineReward
+                : fakeFactory.Network.Consensus.ProofOfWorkReward;
             coinbase.AddInput(TxIn.CreateCoinbase(currentHeight + 1));
             coinbase.AddOutput(new TxOut(reward, scriptPubKey));
             return coinbase;
