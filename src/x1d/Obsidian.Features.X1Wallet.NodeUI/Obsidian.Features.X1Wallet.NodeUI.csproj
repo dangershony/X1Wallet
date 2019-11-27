@@ -1,0 +1,73 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
+    <RunAnalyzersDuringLiveAnalysis>false</RunAnalyzersDuringLiveAnalysis>
+    <ApplicationIcon>icondeapseablue.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="iconblack.ico" />
+    <None Remove="iconblgr.ico" />
+    <None Remove="iconblgr.png" />
+    <None Remove="icongray.ico" />
+    <None Remove="icongray.png" />
+    <None Remove="Icons\iconblack.png" />
+    <None Remove="Icons\iconblbl.ico" />
+    <None Remove="Icons\iconblbl.png" />
+    <None Remove="Icons\icondeapseablue.ico" />
+    <None Remove="Icons\icondeapseablue.png" />
+    <None Remove="Icons\icongrgr.ico" />
+    <None Remove="Icons\icongrgr.png" />
+    <None Remove="iconwhite.ico" />
+    <None Remove="iconwhite.png" />
+    <None Remove="red.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MaterialDesignThemes" Version="2.6.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\dependencies\windows\NotifyIconWpf\NotifyIconWpf.csproj" />
+    <ProjectReference Include="..\Obsidian.x1d\Obsidian.x1d.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Icons\iconblack.ico">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Icons\iconblack.png" />
+    <Resource Include="Icons\iconblbl.ico" />
+    <Resource Include="Icons\iconblbl.png" />
+    <Resource Include="Icons\iconblgr.ico">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Icons\iconblgr.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Icons\icondeapseablue.ico" />
+    <Resource Include="Icons\icondeapseablue.png" />
+    <Resource Include="Icons\icongray.ico">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Icons\icongray.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Icons\icongrgr.ico" />
+    <Resource Include="Icons\icongrgr.png" />
+    <Resource Include="Icons\iconwhite.ico">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Icons\iconwhite.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="red.ico">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+  </ItemGroup>
+
+</Project>

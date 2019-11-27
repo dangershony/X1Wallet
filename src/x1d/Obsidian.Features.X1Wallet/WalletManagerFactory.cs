@@ -16,6 +16,7 @@ namespace Obsidian.Features.X1Wallet
         readonly object lockObject = new object();
 
         WalletManager walletManager;
+        bool isDisposing;
 
         public WalletManagerFactory(NodeServices nodeServices)
         {
@@ -24,6 +25,7 @@ namespace Obsidian.Features.X1Wallet
 
         public void Dispose()
         {
+            this.isDisposing = true;
             using WalletContext context = AutoLoad(null, true);
             {
                 context?.WalletManager?.Dispose();
@@ -45,6 +47,9 @@ namespace Obsidian.Features.X1Wallet
 
             if (walletName == null) 
                 throw new ArgumentNullException(nameof(walletName));
+
+            if (this.isDisposing)
+                throw new ObjectDisposedException($"{nameof(WalletManagerFactory)} has already been disposed.");
 
             if (this.walletManager != null)
             {

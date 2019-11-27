@@ -3,6 +3,29 @@ export const space = [0, 4, 8, 16, 32, 45, 72, 108]
 export const palette = {
   white: '#ffffff',
   black: '#000000',
+  lightningOrange: '#f78447',
+  lightningBrown: '#602a13',
+  deepseaBlue: '#24303d',
+  seaBlue: '#303c4a',
+  hoverSeaBlue: '#34404f',
+  underwaterBlue: '#364253',
+  seaGray: '#f3f3f3',
+  hoverSeaGray: '#f2f2f2',
+  underwaterGray: '#ebebeb',
+  superGreen: '#91e54d', // '#91e54d'
+  pineGreen: '#233a14',
+  superRed: '#f4306a', // '#f4306a'
+  superBlue: '#3478f1', // '#3478f1'
+  mudBrown: '#400f20',
+  gray: '#959595',
+  lightGreen: '#eefff4',
+  lightOrange: '#fff3e1',
+  lightRed: '#ffeded',
+}
+
+export const paletteZap = {
+  white: '#ffffff',
+  black: '#000000',
   lightningOrange: '#fd9800',
   lightningBrown: '#4a2c00',
   deepseaBlue: '#242633',

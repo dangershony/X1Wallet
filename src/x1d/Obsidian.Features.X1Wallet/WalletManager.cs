@@ -23,6 +23,7 @@ namespace Obsidian.Features.X1Wallet
         SubscriptionToken blockConnectedSubscription;
         SubscriptionToken transactionReceivedSubscription;
         StakingService stakingService;
+        bool isDisposing;
 
         public int SyncedHeight => base.GetSyncedHeight();
         public uint256 SyncedHash => base.GetSyncedHash();
@@ -146,6 +147,9 @@ namespace Obsidian.Features.X1Wallet
 
         public void StartStaking(string passphrase)
         {
+            if (this.isDisposing)
+                return;
+
             Guard.NotNull(passphrase, nameof(passphrase));
 
             if (VCL.DecryptWithPassphrase(passphrase, base.GetPassphraseChallenge()) == null)
@@ -191,6 +195,8 @@ namespace Obsidian.Features.X1Wallet
 
         public void Dispose()
         {
+            this.isDisposing = true;
+
             StopStaking();
 
             this.nodeServices.BroadcasterManager.TransactionStateChanged -= OnTransactionStateChanged;

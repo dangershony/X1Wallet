@@ -50,7 +50,7 @@ namespace Obsidian.x1d.Util
 
                 await StartMiningAsync();
 
-                await Task.Delay(20000);
+                await Task.Delay(20000, fullNode.NodeLifetime.ApplicationStopping);
 
                 //await SplitAsync();
                // await SplitForColdStakingAsync();

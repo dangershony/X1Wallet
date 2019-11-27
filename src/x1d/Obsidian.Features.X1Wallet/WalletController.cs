@@ -104,6 +104,11 @@ namespace Obsidian.Features.X1Wallet
             this.timeSyncBehaviorState = timeSyncBehaviorState;
         }
 
+        public void ShutDown()
+        {
+            this.fullNode.NodeLifetime.StopApplication();
+        }
+
         public HistoryInfo GetHistoryInfo(HistoryRequest historyRequest)
         {
             using var context = GetWalletContext();

@@ -17,9 +17,12 @@ namespace Obsidian.x1d
 
     public static class Program
     {
+        static Task toolsTask;
+
         public static void Main(string[] args)
         {
             MainAsync(args).Wait();
+            toolsTask.Dispose();
         }
 
         static async Task MainAsync(string[] args)

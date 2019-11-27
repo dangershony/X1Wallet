@@ -1,0 +1,30 @@
+﻿<Application x:Class="Obsidian.Features.X1Wallet.NodeUI.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:Obsidian.Features.X1Wallet.NodeUI"
+             ShutdownMode="OnExplicitShutdown"
+             >
+    <Application.Resources>
+        <!--
+            Note that this application does not have a StartupUri declared, so no Window is automatically loaded.
+            Also, the ShutdownMode was set to explicit, so we have to close the application programmatically
+        -->
+
+
+        <!-- merge NotifyIcon and related stuff into the application -->
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="NotifyIconResources.xaml" />
+            
+                <ResourceDictionary Source="X1Theme.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Defaults.xaml" />
+                <ResourceDictionary Source="PrimaryColors.xaml" />
+                <ResourceDictionary Source="AccentColors.xaml" />
+                <ResourceDictionary Source="X1Theme.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+           
+           
+        </ResourceDictionary>
+
+    </Application.Resources>
+</Application>

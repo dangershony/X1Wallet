@@ -8,7 +8,6 @@ using Microsoft.Extensions.Logging;
 using Obsidian.Features.X1Wallet.SecureApi;
 using Stratis.Bitcoin;
 using Stratis.Bitcoin.Builder;
-using Stratis.Bitcoin.Utilities;
 
 namespace Obsidian.x1d.Api
 {
@@ -21,7 +20,8 @@ namespace Obsidian.x1d.Api
         readonly FullNode fullNode;
         readonly SecureApiSettings secureApiSettings;
         readonly ILogger logger;
-
+        IWebHost webHost;
+        string secureApiListening;
 
         public SecureApiHostFeature(
             IFullNodeBuilder fullNodeBuilder,
@@ -60,12 +60,9 @@ namespace Obsidian.x1d.Api
             return Task.CompletedTask;
         }
 
-        static void Initialize(IEnumerable<ServiceDescriptor> services, FullNode fullNode, SecureApiSettings secureApiSettings, IWebHostBuilder webHostBuilder)
+        void Initialize(IEnumerable<ServiceDescriptor> services, FullNode fullNode, SecureApiSettings secureApiSettings, IWebHostBuilder webHostBuilder)
         {
-            Guard.NotNull(fullNode, nameof(fullNode));
-            Guard.NotNull(webHostBuilder, nameof(webHostBuilder));
-
-            string secureApiListening = $"{secureApiSettings.SecureApiHostBinding}:{secureApiSettings.SecureApiPort}";
+            this.secureApiListening = $"{secureApiSettings.SecureApiHostBinding}:{secureApiSettings.SecureApiPort}";
 
             webHostBuilder
                 .UseKestrel(options =>
@@ -73,7 +70,7 @@ namespace Obsidian.x1d.Api
 
 
                 })
-                .UseUrls(secureApiListening)
+                .UseUrls(this.secureApiListening)
                 .UseStartup<Startup>()
                 .ConfigureServices(collection =>
                 {
@@ -112,9 +109,30 @@ namespace Obsidian.x1d.Api
                     }
                 });
 
-            IWebHost host = webHostBuilder.Build();
 
-            host.Start();
+           this.webHost = webHostBuilder.Build();
+
+           this.webHost.Start();
+        }
+
+        public override void Dispose()
+        {
+            if (this.webHost != null)
+            {
+                try
+                {
+                    this.logger.LogInformation(
+                        $"Waiting for {nameof(SecureApiHostFeature)} to stop.");
+                    this.webHost.StopAsync(TimeSpan.FromSeconds(2)).Wait();
+                    this.webHost.Dispose();
+                    this.logger.LogInformation($"{nameof(SecureApiHostFeature)} has stopped listening at {this.secureApiListening}.");
+                }
+                catch (Exception e)
+                {
+                    this.logger.LogError(e.Message);
+                }
+               
+            }
         }
     }
 }

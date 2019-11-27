@@ -57,6 +57,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Obsidian.Features.X1Wallet.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Obsidian.Features.X1Wallet.Tests", "Obsidian.Features.X1Wallet.Tests\Obsidian.Features.X1Wallet.Tests.csproj", "{DF39BFC5-8924-405E-9247-724E06773E11}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obsidian.Features.X1Wallet.NodeUI", "Obsidian.Features.X1Wallet.NodeUI\Obsidian.Features.X1Wallet.NodeUI.csproj", "{856A4072-6DD6-4FCE-A9DB-6727528F6B62}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NotifyIconWpf", "dependencies\windows\NotifyIconWpf\NotifyIconWpf.csproj", "{29F5F1BB-9C30-4341-A641-A082E6724A5F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -159,6 +163,14 @@ Global
 		{DF39BFC5-8924-405E-9247-724E06773E11}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DF39BFC5-8924-405E-9247-724E06773E11}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DF39BFC5-8924-405E-9247-724E06773E11}.Release|Any CPU.Build.0 = Release|Any CPU
+		{856A4072-6DD6-4FCE-A9DB-6727528F6B62}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{856A4072-6DD6-4FCE-A9DB-6727528F6B62}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{856A4072-6DD6-4FCE-A9DB-6727528F6B62}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{856A4072-6DD6-4FCE-A9DB-6727528F6B62}.Release|Any CPU.Build.0 = Release|Any CPU
+		{29F5F1BB-9C30-4341-A641-A082E6724A5F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{29F5F1BB-9C30-4341-A641-A082E6724A5F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{29F5F1BB-9C30-4341-A641-A082E6724A5F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{29F5F1BB-9C30-4341-A641-A082E6724A5F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -184,6 +196,7 @@ Global
 		{8D231683-1391-4041-9C14-493938946B2F} = {4DEAE3F0-A809-4075-BD26-ACAE7E98F246}
 		{99F4EE81-E9F5-40E4-BB76-30053490FF27} = {3B8C0104-BECA-4176-9CB7-CE977BF89D63}
 		{2770CB8B-9E11-42E3-A859-A6C8CB0D7406} = {3B8C0104-BECA-4176-9CB7-CE977BF89D63}
+		{29F5F1BB-9C30-4341-A641-A082E6724A5F} = {266911ED-01C3-486B-8C8D-C5F8A502C5CD}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1FC68E92-4C36-4E2C-8498-C54C0268C435}
