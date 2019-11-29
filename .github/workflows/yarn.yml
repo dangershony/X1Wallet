@@ -20,6 +20,6 @@ jobs:
     - name: Install (npm)
       run: npm --prefix ./src/ui install
     - name: Build (npm)
-      run: yarn
+      run: yarn --cwd ./src/ui
       env:
         CI: true
