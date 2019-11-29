@@ -9,7 +9,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [12.x]
+        node-version: [10.x]
 
     steps:
     - uses: actions/checkout@v1
@@ -20,6 +20,6 @@ jobs:
     - name: Install (npm)
       run: npm --prefix ./src/ui install
     - name: Build (npm)
-      run: npm --prefix ./src/ui build
+      run: yarn
       env:
         CI: true
