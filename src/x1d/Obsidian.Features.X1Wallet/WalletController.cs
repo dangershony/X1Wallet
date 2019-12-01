@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Obsidian.Features.X1Wallet.Balances;
 using Obsidian.Features.X1Wallet.Feature;
 using Obsidian.Features.X1Wallet.Models;
 using Obsidian.Features.X1Wallet.Models.Api;
@@ -25,7 +26,6 @@ using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
-using Stratis.Bitcoin.Utilities.JsonErrors;
 
 namespace Obsidian.Features.X1Wallet
 {
@@ -44,6 +44,7 @@ namespace Obsidian.Features.X1Wallet
         readonly INetworkDifficulty networkDifficulty;
         readonly ILoggerFactory loggerFactory;
         readonly ILogger logger;
+        readonly ITimeSyncBehaviorState timeSyncBehaviorState;
 
         string walletName;
 
@@ -55,7 +56,7 @@ namespace Obsidian.Features.X1Wallet
 
         WalletContext GetWalletContext()
         {
-            return this.walletManagerFactory.GetWalletContext(this.walletName);
+            return this.walletManagerFactory.AutoLoad(this.walletName);
         }
 
         TransactionService GetTransactionService()
@@ -84,7 +85,8 @@ namespace Obsidian.Features.X1Wallet
             NodeSettings nodeSettings,
             IChainState chainState,
             INetworkDifficulty networkDifficulty,
-            ILoggerFactory loggerFactory
+            ILoggerFactory loggerFactory,
+            ITimeSyncBehaviorState timeSyncBehaviorState
             )
         {
             this.walletManagerFactory = walletManagerFactory;
@@ -99,6 +101,12 @@ namespace Obsidian.Features.X1Wallet
             this.networkDifficulty = networkDifficulty;
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(typeof(WalletController).Name);
+            this.timeSyncBehaviorState = timeSyncBehaviorState;
+        }
+
+        public void ShutDown()
+        {
+            this.fullNode.NodeLifetime.StopApplication();
         }
 
         public HistoryInfo GetHistoryInfo(HistoryRequest historyRequest)
@@ -112,6 +120,17 @@ namespace Obsidian.Features.X1Wallet
             if (this.walletName != null && !canReuseInstance)
                 throw new InvalidOperationException("walletName is already set - this controller must be a new instance per request!");
             this.walletName = targetWalletName;
+        }
+
+        public CreateReceiveAddressResponse CreateReceiveAddress(CreateReceiveAddressRequest createReceiveAddressRequest)
+        {
+            Guard.NotNull(createReceiveAddressRequest, nameof(createReceiveAddressRequest));
+            using var context = GetWalletContext();
+            {
+                PubKeyHashAddress pubKeyHashAddress = context.WalletManager.CreateReceiveAddress(createReceiveAddressRequest.Label,
+                    createReceiveAddressRequest.Passphrase);
+                return new CreateReceiveAddressResponse { PubKeyHashAddress = pubKeyHashAddress };
+            }
         }
 
         public LoadWalletResponse LoadWallet()
@@ -142,6 +161,17 @@ namespace Obsidian.Features.X1Wallet
 
         public void StartStaking(StartStakingRequest startStakingRequest)
         {
+            if (!C.Network.Consensus.IsProofOfStake)
+                throw new X1WalletException(HttpStatusCode.BadRequest, "Staking requires a Proof-of-Stake consensus.");
+
+            if (this.timeSyncBehaviorState.IsSystemTimeOutOfSync)
+            {
+                string errorMessage = "Staking cannot start, your system time does not match that of other nodes on the network." + Environment.NewLine
+                                                                                                                                  + "Please adjust your system time and restart the node.";
+                Log.Logger.LogError(errorMessage);
+                throw new X1WalletException(HttpStatusCode.InternalServerError, errorMessage);
+            }
+
             using var context = GetWalletContext();
             context.WalletManager.StartStaking(startStakingRequest.Passphrase);
         }
@@ -155,8 +185,7 @@ namespace Obsidian.Features.X1Wallet
         public Balance GetBalance()
         {
             using var context = GetWalletContext();
-            context.WalletManager.GetBudget(out var balance);
-            return balance;
+            return context.WalletManager.GetBalance();
         }
 
         public long EstimateFee(TransactionRequest request)
@@ -166,27 +195,39 @@ namespace Obsidian.Features.X1Wallet
             return response.Fee;
         }
 
+        public TransactionResponse SplitCoinsForColdStaking(TransactionRequest request)
+        {
+            var wm = this.walletManagerFactory.AutoLoad2(this.walletName);
+
+            var balance = wm.GetBalance(null, AddressType.PubKeyHash);
+            var outputsToCreate = 125;
+
+            var defaultColdStakingAddress = wm.GetAllMultiSigAddresses(0, 1).First();
+            var each = (balance.Spendable / 3 - (10000 * C.SatoshisPerCoin)) / outputsToCreate;
+            var eachInCoinUnits = each / C.SatoshisPerCoin;
+            request.Recipients = new List<Recipient>();
+            for (var i = 0; i < outputsToCreate; i++)
+            {
+                request.Recipients.Add(new Recipient { Address = defaultColdStakingAddress.Address, Amount = each });
+            }
+            return BuildTransaction(request);
+        }
+
+
         public TransactionResponse BuildSplitTransaction(TransactionRequest request)
         {
-            var count = 250;
-            var amount = Money.Coins(200_000);
-            List<Recipient> recipients;
-            using var walletContext = GetWalletContext();
-            {
-                walletContext.WalletManager.GetBudget(out Balance _);
-                recipients = walletContext.WalletManager.GetAllAddresses().Values.Take(count).Select(x => new Recipient { Address = x.Address, Amount = amount }).ToList();
-            }
+            var wm = this.walletManagerFactory.AutoLoad2(this.walletName);
 
-            TransactionResponse response = GetTransactionService().BuildTransaction(recipients, request.Sign, request.Passphrase);
-            if (request.Send)
-            {
-                this.broadcasterManager.BroadcastTransactionAsync(response.Transaction).GetAwaiter().GetResult();
-            }
-            else
-            {
-                response.BroadcastState = BroadcastState.NotRequested;
-            }
-            return response;
+            var balance = wm.GetBalance();
+            var addresses = wm.GetAllPubKeyHashReceiveAddresses(0, 125);
+            var each = (balance.Spendable - (10000 * C.SatoshisPerCoin)) / addresses.Length;
+            var eachInCoinUnits = each / C.SatoshisPerCoin;
+            request.Recipients = addresses.Select(x => new Recipient { Address = x.Address, Amount = each }).ToList();
+
+
+
+            return BuildTransaction(request);
+
         }
 
         public TransactionResponse BuildTransaction(TransactionRequest request)
@@ -221,8 +262,8 @@ namespace Obsidian.Features.X1Wallet
 
             ColdStakingTransactionResponse response = GetColdStakingTransactionService().BuildTransaction(null, request.Recipients, request.Sign, request.Passphrase, request.Burns);
 
-            response.BroadcastState = request.Send 
-                ? BroadCast(response.Transaction) 
+            response.BroadcastState = request.Send
+                ? BroadCast(response.Transaction)
                 : BroadcastState.NotRequested;
 
             return response;
@@ -271,7 +312,7 @@ namespace Obsidian.Features.X1Wallet
             try
             {
                 using var context = GetWalletContext();
-                return context.WalletManager.WalletLastBlockSyncedHash == this.chainIndexer.Tip.HashBlock &&
+                return context.WalletManager.SyncedHash == this.chainIndexer.Tip.HashBlock &&
                        this.chainIndexer.Tip?.Height > 0;
             }
             catch (Exception e)
@@ -281,46 +322,39 @@ namespace Obsidian.Features.X1Wallet
             }
         }
 
-        public GetAddressesResponse GetUnusedReceiveAddresses()
+        public GetAddressesResponse GetUsedReceiveAddresses(GetAddressesRequest getAddressesRequest)
         {
             using (var context = GetWalletContext())
             {
-                var p2WpkhAddress = context.WalletManager.GetUnusedAddress();
-                bool isUsed = false;
-                if (p2WpkhAddress == null)
-                {
-                    p2WpkhAddress = context.WalletManager.GetAllAddresses().First().Value;
-                    isUsed = true;
-                }
+                var addresses =
+                    context.WalletManager.GetAllPubKeyHashReceiveAddresses(getAddressesRequest.Skip, getAddressesRequest.Take);
 
-                var model = new GetAddressesResponse { Addresses = new List<AddressModel>() };
-                model.Addresses.Add(new AddressModel { Address = p2WpkhAddress.Address, IsUsed = isUsed, FullAddress = p2WpkhAddress });
-                return model;
+                return new GetAddressesResponse { PubKeyHashAddresses = addresses };
             }
         }
 
-        public AddressModel EnsureDummyMultiSig1Of2Address()
-        {
-            string multiSigAddress = null;
-            using (var context = GetWalletContext())
-            {
-                multiSigAddress = context.WalletManager.EnsureDummyMultiSig1Of2Address();
-            }
+        //public AddressModel EnsureDummyMultiSig1Of2Address()
+        //{
+        //    string multiSigAddress = null;
+        //    using (var context = GetWalletContext())
+        //    {
+        //        multiSigAddress = context.WalletManager.EnsureDummyMultiSig1Of2Address();
+        //    }
 
-            //var recipients = new List<Recipient>();
-            //var recipient = new Recipient { Address = multiSigAddress, Amount = 3 * Satoshi.Long };
-            //recipients.Add(recipient);
-            //this.BuildTransaction(new TransactionRequest
-            //{ Recipients = recipients, Passphrase = "passwordpassword", Sign = true, Send = true, IsMultiSig = true });
-            //this.logger.LogInformation($"Sent {recipient.Amount} to {recipient.Address}");
-            return null;
-        }
+        //    //var recipients = new List<Recipient>();
+        //    //var recipient = new Recipient { Address = multiSigAddress, Amount = 3 * Satoshi.Long };
+        //    //recipients.Add(recipient);
+        //    //this.BuildTransaction(new TransactionRequest
+        //    //{ Recipients = recipients, Passphrase = "passwordpassword", Sign = true, Send = true, IsMultiSig = true });
+        //    //this.logger.LogInformation($"Sent {recipient.Amount} to {recipient.Address}");
+        //    return null;
+        //}
 
-        public void Repair(RepairRequest date)
+        public void Repair(RepairRequest repairRequest)
         {
             var chainedHeader = this.chainIndexer.GetHeader(1);
             using var context = GetWalletContext();
-            context.WalletManager.RemoveBlocks(chainedHeader);
+            context.WalletManager.RepairWallet(repairRequest);
         }
 
         public DaemonInfo GetDaemonInfo()

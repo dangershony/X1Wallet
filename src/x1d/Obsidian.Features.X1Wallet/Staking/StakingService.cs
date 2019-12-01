@@ -2,18 +2,19 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.Crypto;
+using Obsidian.Features.X1Wallet.Balances;
+using Obsidian.Features.X1Wallet.Models.Wallet;
+using Obsidian.Features.X1Wallet.Tools;
+using Obsidian.Features.X1Wallet.Transactions;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.Consensus.CoinViews;
-using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Mining;
-using Stratis.Bitcoin.Utilities;
 using VisualCrypt.VisualCryptLight;
 
 namespace Obsidian.Features.X1Wallet.Staking
@@ -25,37 +26,23 @@ namespace Obsidian.Features.X1Wallet.Staking
         public readonly StakedBlock LastStakedBlock;
         readonly Task stakingTask;
         readonly CancellationTokenSource cts;
-        readonly ILogger logger;
         readonly WalletManager walletManager;
-        readonly Network network;
-        readonly IBlockProvider blockProvider;
-        readonly IConsensusManager consensusManager;
         readonly string passphrase;
-        readonly PosCoinviewRule posCoinViewRule;
+        readonly NodeServices nodeServices;
         readonly Stopwatch stopwatch;
-        readonly IStakeChain stakeChain;
-        readonly ICoinView coinView;
-        readonly IDateTimeProvider dateTimeProvider;
 
-        public StakingService(WalletManager walletManager, string passphrase, ILoggerFactory loggerFactory, Network network, IBlockProvider blockProvider, IConsensusManager consensusManager, IStakeChain stakeChain,
-            ICoinView coinView, IDateTimeProvider dateTimeProvider)
+        public StakingService(WalletManager walletManager, string passphrase, NodeServices nodeServices)
         {
-            this.cts = new CancellationTokenSource();
-            this.stakingTask = new Task(StakingLoop, this.cts.Token);
             this.walletManager = walletManager;
             this.passphrase = passphrase;
-            this.logger = loggerFactory.CreateLogger(typeof(StakingService).FullName);
-            this.network = network;
-            this.blockProvider = blockProvider;
-            this.consensusManager = consensusManager;
-            this.posCoinViewRule = this.consensusManager.ConsensusRules.GetRule<PosCoinviewRule>();
+            this.nodeServices = nodeServices;
+
+            this.cts = new CancellationTokenSource();
+            this.stakingTask = new Task(StakingLoop, this.cts.Token);
             this.stopwatch = Stopwatch.StartNew();
-            this.stakeChain = stakeChain;
             this.Status = new StakingStatus { StartedUtc = DateTimeOffset.UtcNow.ToUnixTimeSeconds() };
             this.PosV3 = new PosV3 { SearchInterval = 64, BlockInterval = 4 * 64 };
             this.LastStakedBlock = new StakedBlock();
-            this.coinView = coinView;
-            this.dateTimeProvider = dateTimeProvider;
         }
 
         public void Start()
@@ -118,14 +105,14 @@ namespace Obsidian.Features.X1Wallet.Staking
                     {
                         this.Status.LastException = $"Consensus Error: {ce.ConsensusError.Message}";
                         this.Status.Exceptions++;
-                        this.logger.LogWarning(this.Status.LastException);
+                        Log.Logger.LogWarning(this.Status.LastException);
                     }
                 }
                 else
                 {
                     this.Status.LastException = e.Message.Replace(":", "-");
                     this.Status.Exceptions++;
-                    this.logger.LogError(e.ToString());
+                    Log.Logger.LogError(e.ToString());
                 }
 
             }
@@ -160,12 +147,12 @@ namespace Obsidian.Features.X1Wallet.Staking
 
         uint256 GetStakeModifierV22()
         {
-            return this.stakeChain.Get(this.consensusManager.Tip.HashBlock).StakeModifierV2;
+            return this.nodeServices.StakeChain.Get(this.nodeServices.ConsensusManager.Tip.HashBlock).StakeModifierV2;
         }
 
-        List<StakingCoin> FindValidKernels(StakingCoin[] coins)
+        List<SegWitCoin> FindValidKernels(SegWitCoin[] coins)
         {
-            var validKernels = new List<StakingCoin>();
+            var validKernels = new List<SegWitCoin>();
             foreach (var c in coins)
             {
                 if (CheckStakeKernelHash(c))
@@ -174,9 +161,9 @@ namespace Obsidian.Features.X1Wallet.Staking
             return validKernels;
         }
 
-        bool CheckStakeKernelHash(StakingCoin stakingCoin)
+        bool CheckStakeKernelHash(SegWitCoin segWitCoin)
         {
-            BigInteger value = BigInteger.ValueOf(stakingCoin.Amount.Satoshi);
+            BigInteger value = BigInteger.ValueOf(segWitCoin.UtxoValue);
             BigInteger weightedTarget = this.PosV3.TargetAsBigInteger.Multiply(value);
 
             uint256 kernelHash;
@@ -185,15 +172,15 @@ namespace Obsidian.Features.X1Wallet.Staking
                 var serializer = new BitcoinStream(ms, true);
                 serializer.ReadWrite(this.PosV3.StakeModifierV2);
 
-                if (this.network.CreateTransaction() is PosTransaction)
+                if (C.Network.CreateTransaction() is PosTransaction)
                 {
                     //serializer.ReadWrite(stakingCoin.Time); // be sure this is uint
-                    var oldFunnyTime = this.coinView.FetchCoins(new[] { stakingCoin.Outpoint.Hash }).UnspentOutputs[0].Time;
+                    var oldFunnyTime = this.nodeServices.CoinView.FetchCoins(new[] { segWitCoin.UtxoTxHash }).UnspentOutputs[0].Time;
                     serializer.ReadWrite(oldFunnyTime); // it should be block time, but due to a bug in ppcoin we need oldFunnyTime
                 }
 
-                serializer.ReadWrite(stakingCoin.Outpoint.Hash);
-                serializer.ReadWrite(stakingCoin.Outpoint.N);
+                serializer.ReadWrite(segWitCoin.UtxoTxHash);
+                serializer.ReadWrite(segWitCoin.UtxoTxN);
                 serializer.ReadWrite((uint)this.PosV3.CurrentBlockTime); // be sure this is uint
                 kernelHash = Hashes.Hash256(ms.ToArray());
             }
@@ -205,46 +192,37 @@ namespace Obsidian.Features.X1Wallet.Staking
 
         BlockTemplate GetBlockTemplate()
         {
-            return this.blockProvider.BuildPosBlock(this.consensusManager.Tip, new Script());
+            return this.nodeServices.BlockProvider.BuildPosBlock(this.nodeServices.ConsensusManager.Tip, new Script());
         }
 
-        void CreateNextBlock(BlockTemplate blockTemplate, List<StakingCoin> kernelCoins)
+        void CreateNextBlock(BlockTemplate blockTemplate, List<SegWitCoin> kernelCoins)
         {
-            StakingCoin kernelCoin = kernelCoins[0];
+            SegWitCoin kernelCoin = kernelCoins[0];
             foreach (var coin in kernelCoins)
-                if (coin.Amount < kernelCoin.Amount)
+                if (coin.UtxoValue < kernelCoin.UtxoValue)
                     kernelCoin = coin;
 
-            var newBlockHeight = this.consensusManager.Tip.Height + 1;
+            var newBlockHeight = this.nodeServices.ConsensusManager.Tip.Height + 1;
 
-            var totalReward = blockTemplate.TotalFee + this.posCoinViewRule.GetProofOfStakeReward(newBlockHeight);
+            var totalReward = blockTemplate.TotalFee + this.nodeServices.PosCoinviewRule.GetProofOfStakeReward(newBlockHeight);
+            blockTemplate.Block.Header.Time = (uint)this.PosV3.CurrentBlockTime;
 
-            var key = new Key(VCL.DecryptWithPassphrase(this.passphrase, kernelCoin.EncryptedPrivateKey));
-
-            Transaction tx = this.network.CreateTransaction();
+            Transaction tx = CoinstakeTransactionService.CreateAndSignCoinstakeTransaction(kernelCoin, totalReward.Satoshi, (uint)this.PosV3.CurrentBlockTime, this.passphrase, out Key blockSignatureKey);
 
             if (tx is PosTransaction posTransaction)
-                posTransaction.Time = blockTemplate.Block.Header.Time = ((PosTransaction)blockTemplate.Block.Transactions[0]).Time = (uint)this.PosV3.CurrentBlockTime;
-
-            tx.AddInput(new TxIn(kernelCoin.Outpoint));
-
-            tx.Outputs.Add(new TxOut(0, Script.Empty));
-            tx.Outputs.Add(new TxOut(0, new Script(OpcodeType.OP_RETURN, Op.GetPushOp(key.PubKey.Compress().ToBytes()))));
-            tx.Outputs.Add(new TxOut(totalReward + kernelCoin.Amount, kernelCoin.ScriptPubKey));
-
-            tx.Sign(this.network, new[] { key }, new ICoin[] { kernelCoin });
+                ((PosTransaction)blockTemplate.Block.Transactions[0]).Time = (uint)this.PosV3.CurrentBlockTime;
 
             blockTemplate.Block.Transactions.Insert(1, tx);
 
-            this.blockProvider.BlockModified(this.consensusManager.Tip, blockTemplate.Block);
+            this.nodeServices.BlockProvider.BlockModified(this.nodeServices.ConsensusManager.Tip, blockTemplate.Block);
 
-            ECDSASignature signature = key.Sign(blockTemplate.Block.GetHash());
+            ECDSASignature signature = blockSignatureKey.Sign(blockTemplate.Block.GetHash());
             ((PosBlock)blockTemplate.Block).BlockSignature = new BlockSignature { Signature = signature.ToDER() };
 
             ChainedHeader chainedHeader;
             try
             {
-                chainedHeader = this.consensusManager.BlockMinedAsync(blockTemplate.Block).GetAwaiter().GetResult();
+                chainedHeader = this.nodeServices.ConsensusManager.BlockMinedAsync(blockTemplate.Block).GetAwaiter().GetResult();
             }
             catch (Exception)
             {
@@ -273,14 +251,14 @@ namespace Obsidian.Features.X1Wallet.Staking
             this.LastStakedBlock.TxId = chainedHeader.Block.Transactions[1].GetHash();
             this.LastStakedBlock.Transactions = chainedHeader.Block.Transactions.Count;
             this.LastStakedBlock.TotalReward = totalReward;
-            this.LastStakedBlock.KernelAddress = kernelCoin.Address;
-            this.LastStakedBlock.WeightUsed = kernelCoin.Amount;
+            this.LastStakedBlock.KernelAddress = kernelCoin.SegWitAddress.Address;
+            this.LastStakedBlock.WeightUsed = kernelCoin.UtxoValue;
             this.LastStakedBlock.TotalComputeTimeMs = this.stopwatch.ElapsedMilliseconds;
             this.LastStakedBlock.BlockTime = this.PosV3.CurrentBlockTime;
             this.Status.BlocksAccepted += 1;
 
-            this.logger.LogInformation(
-                $"Congratulations, your staked a new block at height {newBlockHeight} and received a total reward of {totalReward} {this.network.CoinTicker}.");
+            Log.Logger.LogInformation(
+                $"Congratulations, your staked a new block at height {newBlockHeight} and received a total reward of {totalReward} {C.Network.CoinTicker}.");
         }
 
         double GetNetworkWeight()
@@ -313,19 +291,19 @@ namespace Obsidian.Features.X1Wallet.Staking
             return (int)(this.PosV3.BlockInterval + expectedTimeSeconds);
         }
 
-        StakingCoin[] GetUnspentOutputs()
+        SegWitCoin[] GetUnspentOutputs()
         {
             try
             {
                 this.walletManager.WalletSemaphore.Wait();
 
-                var coins = this.walletManager.GetBudget(out var balance, true);
+                Balance balance = this.walletManager.GetBalance(matchAddress: null, AddressType.MatchAll);
 
-                this.Status.UnspentOutputs = coins.Length;
+                this.Status.UnspentOutputs = balance.StakingCoins.Count;
                 this.Status.Weight = balance.Stakable;
-                this.Status.Immature = balance.Confirmed - balance.Stakable;
+                this.Status.Immature = balance.Total - balance.Stakable;
 
-                return coins;
+                return balance.StakingCoins.Values.ToArray();
             }
             finally
             {
@@ -335,12 +313,11 @@ namespace Obsidian.Features.X1Wallet.Staking
 
         long GetCurrentBlockTime()
         {
-            long currentAdjustedTime = this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
+            long currentAdjustedTime = this.nodeServices.DateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
             long blockTime = currentAdjustedTime - currentAdjustedTime % this.PosV3.SearchInterval;
 
             var blockTimeViaMask = currentAdjustedTime & ~PosConsensusOptions.StakeTimestampMask;
             Debug.Assert(blockTime == blockTimeViaMask);
-
 
             return blockTime;
         }

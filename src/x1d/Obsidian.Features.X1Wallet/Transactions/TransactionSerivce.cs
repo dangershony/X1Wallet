@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Obsidian.Features.X1Wallet.Balances;
 using Obsidian.Features.X1Wallet.Feature;
 using Obsidian.Features.X1Wallet.Models.Api;
 using Obsidian.Features.X1Wallet.Models.Api.Requests;
@@ -51,9 +52,7 @@ namespace Obsidian.Features.X1Wallet.Transactions
             foreach (Recipient recipient in recipients)
             {
                 recipientsAmount += recipient.Amount;
-                tx.Outputs.Add(recipient.Address.Length == AddressHelper.Bech32PubKeyAddressLenght
-                    ? new TxOut(recipient.Amount, recipient.Address.ScriptPubKeyFromBech32Safe())
-                    : new TxOut(recipient.Amount, recipient.Address.ScriptPubKeyFromBech32ScriptAddressSafe()));
+                tx.Outputs.Add(new TxOut(recipient.Amount, recipient.Address.GetScriptPubKey()));
             }
 
             // add burns
@@ -71,7 +70,7 @@ namespace Obsidian.Features.X1Wallet.Transactions
             // calculate size, fee and change amount
             long addedFee = this.minimumPossibleFee;
 
-            StakingCoin[] selectedCoins;
+            SegWitCoin[] selectedCoins;
 
             while (true)
             {
@@ -85,8 +84,8 @@ namespace Obsidian.Features.X1Wallet.Transactions
                 foreach (var c in selectedCoins)
                 {
                     selectedCount++;
-                    selectedAmount += c.Amount;
-                    tx.Inputs.Add(new TxIn(c.Outpoint));
+                    selectedAmount += c.UtxoValue;
+                    tx.Inputs.Add(new TxIn(new OutPoint(c.UtxoTxHash, c.UtxoTxN)));
                 }
 
                 var virtualSize = tx.GetVirtualSize() + selectedCount * SignatureVirtualSize + ChangeOutputVirtualSize;
@@ -98,7 +97,7 @@ namespace Obsidian.Features.X1Wallet.Transactions
                     var change = selectedAmount - totalSendAmount - addedFee;
                     if (change > this.dustThreshold)
                     {
-                        TxOut changeOutput = GetOutputForChange();
+                        TxOut changeOutput = GetOutputForChange(passphrase, !sign);
                         changeOutput.Value = change;
                         tx.Outputs.Add(changeOutput);
                     }
@@ -129,59 +128,55 @@ namespace Obsidian.Features.X1Wallet.Transactions
             return response;
         }
 
-
-
-        IEnumerable<StakingCoin> AddCoins(long totalAmountToSend, long fee)
+        IEnumerable<SegWitCoin> AddCoins(long totalAmountToSend, long fee)
         {
             long totalToSelect = totalAmountToSend + fee;
 
-            IReadOnlyList<StakingCoin> budget;
             Balance balance;
             using (var walletContext = GetWalletContext())
             {
-                budget = walletContext.WalletManager.GetBudget(out balance);
+                balance = walletContext.WalletManager.GetBalance(null, AddressType.PubKeyHash);
             }
 
             if (balance.Spendable < totalToSelect)
                 throw new X1WalletException(System.Net.HttpStatusCode.BadRequest,
                     $"Required are at least {totalToSelect}, but spendable is only {balance.Spendable}");
 
-            int pointer = 0;
             long selectedAmount = 0;
-            while (selectedAmount < totalToSelect)
+            var selectedCoins = new List<SegWitCoin>();
+            foreach (var coin in balance.SpendableCoins.Values)
             {
-                StakingCoin coin = budget[pointer++];
-                selectedAmount += coin.Amount.Satoshi;
-                yield return coin;
+                if (selectedAmount < totalToSelect)
+                {
+                    selectedCoins.Add(coin);
+                    selectedAmount += coin.UtxoValue;
+                }
+                else
+                    return selectedCoins;
             }
+            return selectedCoins;
         }
 
-        TxOut GetOutputForChange()
+        TxOut GetOutputForChange(string passphrase, bool isDummy)
         {
-            using var walletContext = GetWalletContext();
-
-            P2WpkhAddress changeAddress = walletContext.WalletManager.GetUnusedAddress();
-
-            if (changeAddress == null)
+            using (var walletContext = GetWalletContext())
             {
-                changeAddress = walletContext.WalletManager.GetAllAddresses().First().Value;
-                this.logger.LogWarning("Caution, the wallet has run out off unused addresses, and will now use a used address as change address.");
+                var changeAddress = walletContext.WalletManager.GetUnusedChangeAddress(passphrase, isDummy);
+                return new TxOut(0, changeAddress.GetScriptPubKey());
             }
-
-            return new TxOut(0, changeAddress.ScriptPubKeyFromPublicKey());
         }
 
-        static Key[] DecryptKeys(StakingCoin[] selectedCoins, string passphrase)
+        static Key[] DecryptKeys(SegWitCoin[] selectedCoins, string passphrase)
         {
             var keys = new Key[selectedCoins.Length];
             for (var i = 0; i < keys.Length; i++)
-                keys[i] = new Key(VCL.DecryptWithPassphrase(passphrase, selectedCoins[i].EncryptedPrivateKey));
+                keys[i] = selectedCoins[i].GetPrivateKey(passphrase);
             return keys;
         }
 
         WalletContext GetWalletContext()
         {
-            return this.walletManagerFactory.GetWalletContext(this.walletName);
+            return this.walletManagerFactory.AutoLoad(this.walletName);
         }
     }
 }

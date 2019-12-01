@@ -74,10 +74,16 @@ namespace Obsidian.Features.X1Wallet.SecureApi
 
                     case "getReceiveAddresses":
                         {
-                            // this command will only return one unused address or throw if the wallet is out of unused addresses
-                            var addressesModel = this.walletController.GetUnusedReceiveAddresses();
-                            return CreateOk(addressesModel, request);
+                            var getAddressesRequest = Deserialize<GetAddressesRequest>(decryptedRequest.Payload);
+                            GetAddressesResponse getAddressesResponse = this.walletController.GetUsedReceiveAddresses(getAddressesRequest);
+                            return CreateOk(getAddressesResponse, request);
                         }
+                    case "createReceiveAddress":
+                    {
+                        var createReceiveAddressRequest = Deserialize<CreateReceiveAddressRequest>(decryptedRequest.Payload);
+                            CreateReceiveAddressResponse addressesModel = this.walletController.CreateReceiveAddress(createReceiveAddressRequest);
+                        return CreateOk(addressesModel, request);
+                    }
                     case "estimateFee":
                         {
                             var txFeeEstimateRequest = Deserialize<TransactionRequest>(decryptedRequest.Payload);

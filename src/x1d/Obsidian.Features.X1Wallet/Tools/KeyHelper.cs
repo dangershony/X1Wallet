@@ -17,11 +17,11 @@ namespace Obsidian.Features.X1Wallet.Tools
         {
             return new KeyMaterial
             {
-                EncryptedPrivateKey = VCL.EncryptWithPassphrase(keyEncryptionPassphrase, GetSomewhatImprovedRandom(length)),
+                EncryptedPrivateKey = VCL.EncryptWithPassphrase(keyEncryptionPassphrase, GetRandom(length)),
                 KeyPath = null,
                 AddressIndex = null,
                 IsChange = null,
-                CreatedUtc = DateTime.UtcNow,
+                CreatedUtc = DateTime.UtcNow.ToUnixTime(),
                 KeyType = KeyType.Generated
             };
         }
@@ -39,7 +39,7 @@ namespace Obsidian.Features.X1Wallet.Tools
                 KeyPath = null,
                 AddressIndex = null,
                 IsChange = null,
-                CreatedUtc = DateTime.UtcNow,
+                CreatedUtc = DateTime.UtcNow.ToUnixTime(),
                 KeyType = KeyType.Imported
             };
         }
@@ -62,7 +62,7 @@ namespace Obsidian.Features.X1Wallet.Tools
                 EncryptedPrivateKey = VCL.EncryptWithPassphrase(keyEncryptionPassphrase, privateKeyBytes),
                 IsChange = isChangeOrInternal,
                 AddressIndex = addressIndex,
-                CreatedUtc = DateTime.UtcNow,
+                CreatedUtc = DateTime.UtcNow.ToUnixTime(),
                 KeyPath = keyDerivationPath,
                 KeyType = KeyType.Hd
             };
@@ -151,10 +151,9 @@ namespace Obsidian.Features.X1Wallet.Tools
             return new KeyPath($"m/{purpose}'/{coinType}'/{accountIndex}'/{changePath}/{addressIndex}");
         }
 
-
-        public static byte[] GetSomewhatImprovedRandom(int length)
+        public static byte[] GetRandom(int length)
         {
-            if (length != 32 && length != 64)
+            if (length != 32 && length != 64 && length != 20)
                 throw new ArgumentException(nameof(length));
 
             using var sha = SHA512.Create();

@@ -9,6 +9,7 @@ namespace Obsidian.Features.X1Wallet.Models.Wallet
         public uint256 HashTx { get; set; }
 
         public int Index { get; set; }
+
         public long Satoshis { get; set; }
 
         public string GetKey()

@@ -10,10 +10,12 @@ namespace Obsidian.Features.X1Wallet.Tests
     public class MultiSig_Reference
     {
         readonly ITestOutputHelper output;
+        readonly Money fee;
 
         public MultiSig_Reference(ITestOutputHelper output)
         {
             this.output = output;
+            this.fee = Money.Coins(0.00023500m *2);
         }
 
         [Fact]
@@ -43,7 +45,7 @@ namespace Obsidian.Features.X1Wallet.Tests
                     .AddCoins(coin)
                     .Send(spendMultiSigToAddress, Money.Coins(1.0m))
                     .SetChange(scriptPubKey)
-                    .SendFees(Money.Satoshis(100))
+                    .SendFees(this.fee)
                     .BuildTransaction(sign: false);
 
             Transaction aliceSigned =
@@ -117,7 +119,7 @@ namespace Obsidian.Features.X1Wallet.Tests
                     .AddCoins(coin)
                     .Send(spendMultiSigToAddress, Money.Coins(1.0m))
                     .SetChange(msRedeemScript.WitHash.ScriptPubKey)
-                    .SendFees(Money.Satoshis(100))
+                    .SendFees(this.fee)
                     .BuildTransaction(sign: false);
 
             Transaction aliceSigned =
@@ -187,7 +189,7 @@ namespace Obsidian.Features.X1Wallet.Tests
                     .AddCoins(coin)
                     .Send(spendMultiSigToAddress, Money.Coins(1.0m))
                     .SetChange(msRedeemScript.WitHash.ScriptPubKey)
-                    .SendFees(Money.Satoshis(100))
+                    .SendFees(this.fee)
                     .BuildTransaction(sign: false);
 
             Transaction mySigned = builder

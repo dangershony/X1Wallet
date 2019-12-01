@@ -2,7 +2,7 @@
 
 namespace Obsidian.Features.X1Wallet.Tools
 {
-    class ObsidianNetwork : Network
+    sealed class ObsidianNetwork : Network
     {
         public ObsidianNetwork()
         {

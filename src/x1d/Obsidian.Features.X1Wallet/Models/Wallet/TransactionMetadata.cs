@@ -6,9 +6,9 @@ using Newtonsoft.Json.Converters;
 
 namespace Obsidian.Features.X1Wallet.Models.Wallet
 {
-    public class TransactionMetadata : IEquatable<TransactionMetadata>
+    public sealed class TransactionMetadata : IEquatable<TransactionMetadata>
     {
-        public long ValueAdded;
+        public long ValueAdded { get; set; }
 
         [JsonConverter(typeof(StringEnumConverter))]
         public TxType TxType { get; set; }
@@ -18,9 +18,10 @@ namespace Obsidian.Features.X1Wallet.Models.Wallet
         public Dictionary<string, UtxoMetadata> Received { get; set; }
 
         public Dictionary<string, UtxoMetadata> Spent { get; set; }
+
         public Dictionary<string, UtxoMetadata> Destinations { get; set; }
 
-        #region overrides of Equals, GetHashCode, ==, !=
+        #region overrides of Equals, GetHashCode, ==, != (for use with HashSet<T>)
 
         public override bool Equals(object obj)
         {

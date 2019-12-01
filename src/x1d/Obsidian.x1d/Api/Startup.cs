@@ -21,7 +21,6 @@ namespace Obsidian.x1d.Api
         public void ConfigureServices(IServiceCollection services)
         {
             // TODO: Check if this is required when the electron wallet is built for production, because this CORS policy allows requests from two more ports in addition to the api port (port 80 and 4200).No 'Access-Control-Allow-Origin'
-
             services.AddCors
             (
                 options =>
@@ -40,16 +39,16 @@ namespace Obsidian.x1d.Api
                     );
                 });
 
-            services.AddMvc()
-                .SetCompatibilityVersion(CompatibilityVersion.Version_2_1)
-                .AddJsonOptions(options => Serializer.RegisterFrontConverters(options.SerializerSettings))
+            services.AddMvc(options => { options.EnableEndpointRouting = false;})
+                .SetCompatibilityVersion(CompatibilityVersion.Version_2_2)
+                .AddNewtonsoftJson(options => Stratis.Bitcoin.Utilities.JsonConverters.Serializer.RegisterFrontConverters(options.SerializerSettings))
                 .AddSecureApi(services);
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
         {
-            loggerFactory.AddConsole(this.Configuration.GetSection("Logging"));
-            loggerFactory.AddDebug();
+            //loggerFactory.AddConsole(this.Configuration.GetSection("Logging"));
+            //loggerFactory.AddDebug();
 
             app.UseCors("CorsPolicy");
 
@@ -66,7 +65,8 @@ namespace Obsidian.x1d.Api
                 }
             });
 
-            app.UseMvc(routes =>{
+            app.UseMvc(routes =>
+            {
                 routes.MapRoute(name: "default", template: "{controller}/{action}/{id?}");
             });
         }

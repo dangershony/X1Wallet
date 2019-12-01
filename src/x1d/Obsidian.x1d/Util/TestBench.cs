@@ -50,9 +50,10 @@ namespace Obsidian.x1d.Util
 
                 //await StartMiningAsync();
 
-                await Task.Delay(20000);
+                await Task.Delay(20000, fullNode.NodeLifetime.ApplicationStopping);
 
                 //await SplitAsync();
+               // await SplitForColdStakingAsync();
 
                 for (i = 0; i < 50; i++)
                 {
@@ -62,7 +63,8 @@ namespace Obsidian.x1d.Util
                     //await Task.Delay(1000);
                 }
 
-                await TryStakingAsync();
+                //await SplitAsync();
+              await TryStakingAsync();
             }
             catch (Exception e)
             {
@@ -82,7 +84,7 @@ namespace Obsidian.x1d.Util
                     new Recipient
                     {
                         Address = "odx1qpm3mfhpfyepugg629k4tgwllxjf285vwwd3f4h", // in my wallet
-                        Amount = 2 * Satoshi.Long,
+                        Amount = 2 * C.SatoshisPerCoin,
 
                     }
                 },
@@ -167,7 +169,12 @@ namespace Obsidian.x1d.Util
             }
         }
 
+        static async Task SplitForColdStakingAsync()
+        {
 
+
+            TransactionResponse model = Controller.SplitCoinsForColdStaking(new TransactionRequest { Passphrase = _passPhrase, Sign = true, Send = true });
+        }
 
 
         static async Task SplitAsync()
@@ -198,10 +205,10 @@ namespace Obsidian.x1d.Util
 
             //}
             // await Task.Delay(10000);
-            var model = Controller.GetUnusedReceiveAddresses();
-            var address = model.Addresses[0].FullAddress;
+            var model = Controller.GetUsedReceiveAddresses(new Features.X1Wallet.Models.Api.Responses.GetAddressesRequest{Skip=0, Take = 1});
+            var address = model.PubKeyHashAddresses[0].Address;
 
-            var script = new ReserveScript { ReserveFullNodeScript = address.ScriptPubKeyFromPublicKey() };
+            var script = new ReserveScript { ReserveFullNodeScript = address.GetScriptPubKey() };
             _ = Task.Run(() =>
             {
                 _logger.LogInformation("Starting Miner...");

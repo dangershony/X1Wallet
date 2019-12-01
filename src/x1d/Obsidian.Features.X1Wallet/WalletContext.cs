@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Obsidian.Features.X1Wallet
 {
-    public sealed class WalletContext : IDisposable
+    sealed  class WalletContext : IDisposable
     {
         public readonly WalletManager WalletManager;
 

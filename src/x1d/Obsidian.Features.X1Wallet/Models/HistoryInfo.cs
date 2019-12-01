@@ -13,7 +13,7 @@ namespace Obsidian.Features.X1Wallet.Models
         public class BlockInfo
         {
             public int Height;
-            public uint Time;
+            public long Time;
             public string HashBlock;
             public List<TransactionInfo> Transactions;
         }

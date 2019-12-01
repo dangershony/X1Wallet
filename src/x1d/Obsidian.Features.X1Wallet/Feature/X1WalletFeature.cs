@@ -1,15 +1,18 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using NBitcoin;
 using Obsidian.Features.X1Wallet.Models;
 using Obsidian.Features.X1Wallet.Models.Api.Requests;
 using Obsidian.Features.X1Wallet.Tools;
-using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Utilities;
+
+[assembly: InternalsVisibleTo("Obsidian.Features.X1Wallet.Tests")]
 
 namespace Obsidian.Features.X1Wallet.Feature
 {
@@ -43,8 +46,6 @@ namespace Obsidian.Features.X1Wallet.Feature
 
         public override Task InitializeAsync()
         {
-            IsDefaultBlockHashExtension.Init(this.network);
-
             this.connectionManager.Parameters.TemplateBehaviors.Add(this.broadcasterBehavior);
 
             return Task.CompletedTask;
@@ -59,7 +60,7 @@ namespace Obsidian.Features.X1Wallet.Feature
         {
             WriteDaemonInfo(log);
 
-            using (var context = this.walletManagerFactory.GetWalletContext(null, true))
+            using (var context = this.walletManagerFactory.AutoLoad(null, true))
             {
                 string loadedWalletName = context?.WalletManager.WalletName;
                 this.walletController.SetWalletName(loadedWalletName, true);
@@ -91,6 +92,7 @@ namespace Obsidian.Features.X1Wallet.Feature
 
         void WriteDaemonInfo(StringBuilder log)
         {
+            return;
             try
             {
                 var daemonInfo = this.walletController.GetDaemonInfo();
@@ -107,6 +109,7 @@ namespace Obsidian.Features.X1Wallet.Feature
 
         void WriteTransactionInfo(StringBuilder log)
         {
+            return;
             var request = new HistoryRequest { Take = 3 };
             var daemonInfo = this.walletController.GetHistoryInfo(request);
             var header = $" Last {request.Take.Value} Transactions ";

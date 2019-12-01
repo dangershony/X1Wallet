@@ -1,6 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using NBitcoin;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using Obsidian.Features.X1Wallet.Tools;
+using VisualCrypt.VisualCryptLight;
 
 namespace Obsidian.Features.X1Wallet.Models.Wallet
 {
@@ -14,6 +17,10 @@ namespace Obsidian.Features.X1Wallet.Models.Wallet
         AddressType AddressType { get; }
         string ScriptPubKeyHex { get; }
         string Label { get; set; }
+
+        byte[] GetEncryptedPrivateKey();
+
+        int? LastSeenHeight { get; set; }
     }
 
     public interface ISegWitScriptAddress
@@ -28,6 +35,8 @@ namespace Obsidian.Features.X1Wallet.Models.Wallet
     /// </summary>
     public enum AddressType : int
     {
+        MatchAll = -10,
+
         PubKeyHash = 0,
         MultiSig = 10,
         ColdStakingCold = 30,
@@ -36,6 +45,7 @@ namespace Obsidian.Features.X1Wallet.Models.Wallet
 
     public sealed class KeyMaterial
     {
+        [JsonConverter(typeof(StringEnumConverter))]
         public KeyType KeyType;
 
         public string KeyPath;
@@ -44,7 +54,7 @@ namespace Obsidian.Features.X1Wallet.Models.Wallet
 
         public int? IsChange;
 
-        public DateTime CreatedUtc;
+        public long CreatedUtc;
 
         public byte[] EncryptedPrivateKey;
     }
@@ -61,6 +71,7 @@ namespace Obsidian.Features.X1Wallet.Models.Wallet
     {
         public string Address { get; set; }
 
+        [JsonConverter(typeof(StringEnumConverter))]
         public AddressType AddressType { get; set; }
 
         public string ScriptPubKeyHex { get; set; }
@@ -68,17 +79,24 @@ namespace Obsidian.Features.X1Wallet.Models.Wallet
         public string Label { get; set; }
 
         /// <summary>
-        /// This property must only be set while processing transactions from the blockchain.
-        /// The presence of a valid date indicates that the address is a used address.
+        /// This property must only be SET while processing transactions from the blockchain.
+        /// The presence of a valid value indicates that the address is a used address.
         /// </summary>
-        public DateTime? FirstSeenUtc { get; set; }
+        public int? LastSeenHeight { get; set; }
 
         public KeyMaterial KeyMaterial;
 
+        public byte[] GetEncryptedPrivateKey()
+        {
+            return this.KeyMaterial.EncryptedPrivateKey;
+        }
+
+       
     }
 
     public sealed class MultiSigAddress : ISegWitAddress, ISegWitScriptAddress
     {
+        [JsonConverter(typeof(StringEnumConverter))]
         public AddressType AddressType { get; set; }
 
         public string Address { get; set; }
@@ -88,6 +106,8 @@ namespace Obsidian.Features.X1Wallet.Models.Wallet
         public string Label { get; set; }
 
         public string RedeemScriptHex { get; set; }
+
+        public int? LastSeenHeight { get; set; }
 
         public KeyMaterial OwnKey { get; set; }
 
@@ -100,12 +120,23 @@ namespace Obsidian.Features.X1Wallet.Models.Wallet
         /// Value: Nickname of the owner of the public key for display.
         /// </summary>
         public Dictionary<string,string> OtherPublicKeys { get; set; }
+
+        public byte[] GetEncryptedPrivateKey()
+        {
+            return this.OwnKey.EncryptedPrivateKey;
+        }
+
+        public Script GetRedeemScript()
+        {
+            return new Script(this.RedeemScriptHex.FromHexString());
+        }
     }
 
     public class ColdStakingAddress : ISegWitAddress, ISegWitScriptAddress
     {
         public string Address { get; set; }
 
+        [JsonConverter(typeof(StringEnumConverter))]
         public AddressType AddressType { get; set; }
 
         public string ScriptPubKeyHex { get; set; }
@@ -114,8 +145,24 @@ namespace Obsidian.Features.X1Wallet.Models.Wallet
 
         public string RedeemScriptHex { get; set; }
 
+        public int? LastSeenHeight { get; set; }
+
         public KeyMaterial ColdKey { get; set; }
 
         public KeyMaterial HotKey { get; set; }
+
+        public byte[] StakingKey { get; set; }
+
+        public byte[] GetEncryptedPrivateKey()
+        {
+            if (this.AddressType == AddressType.ColdStakingCold)
+                return this.ColdKey.EncryptedPrivateKey;
+            return this.HotKey.EncryptedPrivateKey;
+        }
+
+        public Script GetRedeemScript()
+        {
+            return new Script(this.RedeemScriptHex.FromHexString());
+        }
     }
 }

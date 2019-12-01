@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using NBitcoin;
+using Obsidian.Features.X1Wallet.Balances;
 using Obsidian.Features.X1Wallet.Models.Api;
 using Obsidian.Features.X1Wallet.Models.Wallet;
 using Obsidian.Features.X1Wallet.Staking;
@@ -47,9 +48,20 @@ namespace Obsidian.Features.X1Wallet.Models
         public Balance Balance;
         public MemoryPoolMetadata MemoryPool;
         public int Adresses;
-        public string DefaultAddress;
-        public string UnusedAddress;
+        public string DefaultReceiveAddress;
         public StakingInfo StakingInfo;
         public string PassphraseChallenge;
+       
+        public int ColdStakingAddresses;
+        public string DefaultCSAddress;
+        public long CSTotal;
+        public long CSSpendable;
+        public long CSStakable;
+
+        public int MultiSigAddresses;
+        public string DefaultMSAddress;
+        public long MSTotal;
+        public long MSSpendable;
+        public long MSStakable;
     }
 }

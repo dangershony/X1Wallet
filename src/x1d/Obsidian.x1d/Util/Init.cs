@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin.Protocol;
@@ -13,7 +14,7 @@ using Stratis.Bitcoin.Configuration;
 
 namespace Obsidian.x1d.Util
 {
-    static class Init
+    public static class Init
     {
         internal static NodeSettings GetNodeSettings(string[] args)
         {
@@ -25,7 +26,7 @@ namespace Obsidian.x1d.Util
             return nodeSettings;
         }
 
-        static string[] MergeArgs(string[] args)
+        public static string[] MergeArgs(string[] args)
         {
             var arguments = new List<string>();
             if (args != null)
@@ -48,7 +49,7 @@ namespace Obsidian.x1d.Util
             return arguments.ToArray();
         }
 
-        internal static void PrintWelcomeMessage(NodeSettings nodeSettings, IFullNode fullNode)
+        public static void PrintWelcomeMessage(NodeSettings nodeSettings, IFullNode fullNode)
         {
 
             var welcome = new StringBuilder();
@@ -60,7 +61,7 @@ namespace Obsidian.x1d.Util
                 .LogInformation(welcome.ToString());
         }
 
-        static string GetCredits()
+        public static string GetCredits()
         {
             var sb = new StringBuilder();
             var intro = "Credits, greetings and thanks to: ";
@@ -92,7 +93,7 @@ namespace Obsidian.x1d.Util
             return $"{credits} and many more - join the power!";
         }
 
-        internal static string GetName()
+        public static string GetName()
         {
             var assembly = Assembly.GetExecutingAssembly();
             var name = assembly.GetName().Name;
@@ -102,15 +103,20 @@ namespace Obsidian.x1d.Util
             return $"{name} {version}{compilation}";
         }
 
-        internal static void RunIfDebugModeDelayed(IFullNode fullNode, int milliSeconds = 10000)
+        public static CancellationTokenSource RunIfDebugModeDelayed(IFullNode fullNode, int milliSeconds = 10000)
         {
+            var cts = new CancellationTokenSource();
+
             // #if DEBUG
-            _ = Task.Run(async () =>
+
+            var _ = Task.Run(async () =>
             {
-                await Task.Delay(milliSeconds);
+                await Task.Delay(milliSeconds, cts.Token);
                 TestBench.RunTestCodeAsync((FullNode)fullNode);
-            });
+            }, cts.Token);
+
             //  #endif
+            return cts;
         }
 
 #if DEBUG

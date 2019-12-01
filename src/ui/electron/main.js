@@ -190,7 +190,7 @@ app.on('ready', async () => {
     height: 680,
     minWidth: 900,
     minHeight: 425,
-    backgroundColor: get(theme, 'colors.primaryColor', '#242633'),
+    backgroundColor: get(theme, 'colors.primaryColor', '#222c37'), // 222c37, #242633
     icon: isDev
       ? path.resolve('resources', 'icon.png')
       : path.resolve(appRootPath(), 'resources', 'icon.png'),

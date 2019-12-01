@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Obsidian.Features.X1Wallet.Feature;
 using Stratis.Bitcoin.Builder;
-using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Configuration;
 
 namespace Obsidian.Features.X1Wallet.SecureApi
 {
