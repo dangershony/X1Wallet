@@ -1,7 +1,7 @@
 ﻿using System;
 using Microsoft.Extensions.DependencyInjection;
 using Stratis.Bitcoin.Builder;
-using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.ColdStaking;
 using Stratis.Bitcoin.Features.MemoryPool;

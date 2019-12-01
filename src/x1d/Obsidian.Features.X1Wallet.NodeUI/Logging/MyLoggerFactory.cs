@@ -5,15 +5,13 @@ namespace Obsidian.Features.X1Wallet.NodeUI.Logging
     using System;
     using System.Diagnostics;
     using Microsoft.Extensions.Logging;
-    using Stratis.Bitcoin.Configuration.Logging;
 
-    internal sealed class MyLoggerFactory : ExtendedLoggerFactory, ILoggerFactory
+    internal sealed class MyLoggerFactory : ILoggerFactory
     {
         private readonly ILoggerProvider loggerProvider;
         public MyLoggerFactory()
         {
             this.loggerProvider = new MyLoggerProvider();
-            this.ConsoleLoggerProvider = this.loggerProvider;
         }
 
         public new void AddProvider(ILoggerProvider provider)

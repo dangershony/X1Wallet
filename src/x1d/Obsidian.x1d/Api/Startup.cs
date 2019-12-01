@@ -39,9 +39,9 @@ namespace Obsidian.x1d.Api
                     );
                 });
 
-            services.AddMvc()
-                .SetCompatibilityVersion(CompatibilityVersion.Version_2_1)
-                .AddJsonOptions(options => Serializer.RegisterFrontConverters(options.SerializerSettings))
+            services.AddMvc(options => { options.EnableEndpointRouting = false;})
+                .SetCompatibilityVersion(CompatibilityVersion.Version_2_2)
+                .AddNewtonsoftJson(options => Stratis.Bitcoin.Utilities.JsonConverters.Serializer.RegisterFrontConverters(options.SerializerSettings))
                 .AddSecureApi(services);
         }
 
@@ -65,7 +65,8 @@ namespace Obsidian.x1d.Api
                 }
             });
 
-            app.UseMvc(routes =>{
+            app.UseMvc(routes =>
+            {
                 routes.MapRoute(name: "default", template: "{controller}/{action}/{id?}");
             });
         }

@@ -6,7 +6,7 @@ using NBitcoin;
 using Obsidian.Features.X1Wallet.Models;
 using Obsidian.Features.X1Wallet.Models.Api.Requests;
 using Obsidian.Features.X1Wallet.Tools;
-using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
